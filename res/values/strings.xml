@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Oats</string>
+    <string name="check_in">Check in</string>
+    <string name="check_out">Check out</string>
+    <string name="logo">Logo</string>
+    <string name="background">Background</string>
+    <string name="default_location">0.00000000</string>
+    <string name="default_accuracy">0.00000 m</string>
+    <string name="default_number">Phone number: unknown</string>
+</resources>

@@ -1,0 +1,114 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_alignParentBottom="true"
+    android:background="@drawable/backcolor"
+    tools:context=".MasterActivity" >
+	
+    <ImageView
+        android:id="@+id/imageView2"
+        android:scaleType="fitEnd"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/background"
+        android:contentDescription="@string/background" />
+
+    <RelativeLayout
+	    android:id="@+id/fullscreen_content"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:layout_margin="20sp"
+	    android:layout_gravity="center|center_vertical"
+	    android:orientation="vertical"
+	    tools:ignore="UselessParent" >
+		
+        <RelativeLayout
+            android:id="@+id/fullscreen_content_controls"
+            android:layout_width="0sp"
+    		android:layout_height="0sp" />
+        
+		<ImageView
+		    android:id="@+id/imageView1"
+		    android:scaleType="fitStart"
+		    android:layout_width="match_parent"
+		    android:layout_height="match_parent"
+		    android:layout_alignParentTop="true"
+		    android:layout_marginTop="25sp"
+		    android:layout_marginLeft="25sp"
+			android:layout_marginRight="25sp"
+		    android:src="@drawable/logo"
+		    android:contentDescription="@string/logo" />
+	    
+	    <ToggleButton
+			    android:id="@+id/check"
+			    android:background="@drawable/check"
+			    android:textColor="#000000"
+			    android:textStyle="bold"
+			    android:textSize="20sp"
+			    android:layout_alignParentBottom="true"
+			    android:layout_marginLeft="50sp"
+			    android:layout_marginRight="50sp"
+			    android:layout_marginBottom="50sp"
+			    android:layout_width="fill_parent"
+			    android:layout_height="50sp"
+			    android:textOn="@string/check_out"
+			    android:textOff="@string/check_in"
+			    android:onClick="onToggleClicked" />
+
+	    <TextView
+	        android:id="@+id/longitude"
+	        android:textColor="#000000"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignBaseline="@+id/latitude"
+	        android:layout_alignBottom="@+id/latitude"
+	        android:layout_alignParentRight="true"
+	        android:text="@string/default_location"
+	        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+	    <TextView
+	        android:id="@+id/latitude"
+	        android:textColor="#000000"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_centerVertical="true"
+	        android:text="@string/default_location"
+	        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+	    <ProgressBar
+	        android:id="@+id/loading"
+	        style="?android:attr/progressBarStyleLarge"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_below="@+id/latitude"
+	        android:layout_centerHorizontal="true"
+	        android:indeterminate="true"
+	        android:visibility="gone" />
+
+	    <TextView
+	        android:id="@+id/accuracy"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_below="@+id/latitude"
+	        android:layout_centerHorizontal="true"
+	        android:layout_marginTop="17dp"
+	        android:text="@string/default_accuracy"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textColor="#000000" />
+
+	    <TextView
+	        android:id="@+id/phoneNumber"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_below="@+id/accuracy"
+	        android:layout_centerHorizontal="true"
+	        android:layout_marginTop="16dp"
+	        android:text="@string/default_number"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textColor="#000000" />
+    
+    </RelativeLayout>
+    
+</FrameLayout>
