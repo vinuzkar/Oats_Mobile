@@ -1,20 +1,22 @@
 package com.project.oats;
 
-import java.util.List;
-
-import com.project.oats.util.SystemUiHider;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
+import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -27,13 +29,23 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.project.oats.util.SystemUiHider;
+
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  * 
  * @see SystemUiHider
  */
-public class MasterActivity extends Activity {
+public class MasterActivity extends Activity implements LocationListener {
+	
+	private static Toast toast;
+	
+	private static View layout;
+	
+	private static TextView text;
+	
+	private LocationManager lm;
 	
 	private final String PREFS_NAME = "OatsPref";
 	/**
@@ -46,7 +58,7 @@ public class MasterActivity extends Activity {
 	 * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
 	 * user interaction before hiding the system UI.
 	 */
-	private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
+	private static final int AUTO_HIDE_DELAY_MILLIS = 0;
 
 	/**
 	 * If set, will toggle the system UI visibility upon interaction. Otherwise,
@@ -75,6 +87,17 @@ public class MasterActivity extends Activity {
 			setContentView(R.layout.activity_master_land);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		}
+		
+		LayoutInflater inflater = getLayoutInflater();
+	    layout = inflater.inflate(R.layout.info, (ViewGroup)findViewById(R.id.toast_layout_root));
+	    text = (TextView)layout.findViewById(R.id.information);
+	    
+		toast = new Toast(getApplicationContext());
+		toast.setGravity(Gravity.CENTER, 0, 0);
+	    toast.setDuration(Toast.LENGTH_SHORT);
+	    toast.setView(layout);
+	    
+	    lm = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.fullscreen_content);
@@ -180,38 +203,41 @@ public class MasterActivity extends Activity {
 	}
 	
 	public void onToggleClicked(View view) {
-		// Is the toggle on?
-	    boolean on = ((ToggleButton) view).isChecked();
-	    
 	    TelephonyManager tMgr = (TelephonyManager)getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
-	    
-	    LayoutInflater inflater = getLayoutInflater();
-	    View layout = inflater.inflate(R.layout.info, (ViewGroup)findViewById(R.id.toast_layout_root));
-	    TextView text = (TextView)layout.findViewById(R.id.information);
-	    
-	    Location loc = getLastKnownLocation();
+	    Location loc = getLocation();
 	    
 	    if(loc != null) {
+	    	boolean on = ((ToggleButton)view).isChecked();
+	    	String id = null;
+	    	TextView t = (TextView)findViewById(R.id.identifier);
+	    	
 	    	((TextView)findViewById(R.id.latitude)).setText(String.format("%.8f", loc.getLatitude()));
 		    ((TextView)findViewById(R.id.longitude)).setText(String.format("%.8f", loc.getLongitude()));
 		    ((TextView)findViewById(R.id.accuracy)).setText(String.format("%.5f", loc.getAccuracy()) + " m");
+		    ((TextView)findViewById(R.id.provider)).setText(loc.getProvider());
 		    if (on) {
-		    	((TextView)findViewById(R.id.phoneNumber)).setText("Phone number: " + tMgr.getLine1Number());
+		    	if((id = tMgr.getLine1Number()) != null && !id.equals("")) {
+		    		t.setText("Phone number: " + id);
+		    	} else if((id = tMgr.getSimSerialNumber()) != null && !id.equals("")) {
+		    		t.setText("SIM serial number: " + id);
+		    	} else if((id = tMgr.getDeviceId()) != null && !id.equals("")) {
+		    		t.setText("Device ID: " + id);
+		    	} else if((id = Secure.getString(getApplicationContext().getContentResolver(), Secure.ANDROID_ID)) != null &&
+		    			!id.equals("") && !id.equals("9774d56d682e549c")) {
+		    		t.setText("ANDROID_ID: " + id);
+		    	}
 		    	text.setText("You have successfully checked in.");
 		    } else {
-		    	((TextView)findViewById(R.id.phoneNumber)).setText(R.string.default_number);
+		    	t.setText(R.string.default_id);
 		    	text.setText("You have successfully checked out.");
 		    }
+		    
+		    toast.cancel();
+		    toast.show();
     	} else {
-    		((ToggleButton)findViewById(R.id.check)).toggle();
-    		text.setText("Make sure your phone is connected to Internet.");
+    		((ToggleButton)view).toggle();
+    		showSettingsDialog();
     	}
-	    
-	    Toast toast = new Toast(getApplicationContext());
-	    toast.setGravity(Gravity.CENTER, 0, 0);
-	    toast.setDuration(Toast.LENGTH_SHORT);
-	    toast.setView(layout);
-	    toast.show();
 	}
 	
 	public int getDeviceDefaultOrientation() {
@@ -248,22 +274,106 @@ public class MasterActivity extends Activity {
         ((ToggleButton)findViewById(R.id.check)).setChecked(isToggleChecked.getBoolean("isToggleChecked", false));
      }
 
-	private Location getLastKnownLocation() {
-		LocationManager lm = (LocationManager)getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-		List<String> providers = lm.getProviders(true);
-	    Location bestLocation = null;
-	    for (String provider : providers) {
-	        Location l = lm.getLastKnownLocation(provider);
+	public Location getLocation() {
+		
+		Location loc1 = null, loc2 = null;
+		
+        boolean isGPSEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-	        if (l == null) {
-	            continue;
-	        }
-	        if (bestLocation == null) {
-	            bestLocation = l;
-	        } else if(l.getAccuracy() < bestLocation.getAccuracy()) {
-	        	bestLocation = l;
-	        }
-	    }
-	    return bestLocation;
+        boolean isNetworkEnabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+        if (!isGPSEnabled && !isNetworkEnabled) {
+        	return null;
+        } else {
+            if (isNetworkEnabled) {
+                lm.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, this, null);
+                if (lm != null) {
+                    loc1 = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+            }
+
+            if (isGPSEnabled) {
+            	lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, null);
+                if (lm != null) {
+                    loc2 = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                }
+            }
+            
+            if(loc1 != null && loc2 != null) {
+            	if(loc1.getAccuracy() < loc2.getAccuracy()) {
+            		return loc2;
+            	} else {
+            		return loc1;
+            	}
+            } else if(loc1 != null) {
+            	return loc1;
+            } else if(loc2 != null) {
+            	return loc2;
+            } else {
+            	return null;
+            }
+        }
 	}
+	
+	@Override
+	public void onLocationChanged(Location location) {
+	}
+
+	@Override
+	public void onProviderDisabled(String arg0) {
+	}
+
+	@Override
+	public void onProviderEnabled(String arg0) {
+	}
+
+	@Override
+	public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
+	}
+	
+	/**
+     * Function to show settings alert dialog
+     * On pressing Settings button will lauch Settings Options
+     * */
+    public void showSettingsDialog() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+      
+        // Setting Dialog Title
+        alertDialog.setTitle("Problem Retrieving Location");
+  
+        // Setting Dialog Message
+        alertDialog.setMessage("Current location's accuracy is below the desired accuracy. To improve it, please turn on your WiFi/Mobile Network or GPS.");
+  
+        // On pressing Settings button
+        alertDialog.setPositiveButton("Wireless Settings", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,int which) {
+            	int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+            	Intent intent;
+            	if (currentapiVersion >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH){
+            		intent = new Intent(Settings.ACTION_SETTINGS);
+            	} else{
+            		intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+            	}
+                startActivity(intent);
+            }
+        });
+        
+     // On pressing Settings button
+        alertDialog.setNeutralButton("GPS Settings", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,int which) {
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+        });
+  
+        // on pressing cancel button
+        alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            	dialog.cancel();
+            }
+        });
+  
+        // Showing Alert Message
+        alertDialog.show();
+    }
 }
