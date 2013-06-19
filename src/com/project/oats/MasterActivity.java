@@ -41,7 +41,6 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -63,7 +62,11 @@ public class MasterActivity extends Activity implements LocationListener {
 	
 	private static View layout;
 	
-	private static TextView text;
+	private TextView information, accuracy, provider;
+	
+	private ToggleButton check;
+	
+	private ProgressBar loading;
 	
 	private final String PREFS_NAME = "OatsPref";
 	
@@ -98,10 +101,16 @@ public class MasterActivity extends Activity implements LocationListener {
 	
 	private class GetLocation extends AsyncTask<Void, Void, Location> {
 		
+		private View view;
+		
+		public GetLocation(View v) {
+			view = v;
+		}
+		
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
-			((ProgressBar)findViewById(R.id.loading)).setVisibility(View.VISIBLE);
+			loading.setVisibility(View.VISIBLE);
 		}
 		
 		@Override
@@ -146,30 +155,36 @@ public class MasterActivity extends Activity implements LocationListener {
 	            }
 	        }
 		}
+		
+		@Override
+		protected void onPostExecute(Location l) {
+			super.onPostExecute(l);
+			processLocation(view, l);
+		}
 	}
 	
 	private class ConnectActivity extends AsyncTask<String, Void, JSONObject> {
 		
 		private final String CHARSET = "UTF-8";
 		
-		private String id;
+		private View view;
 		
 		private Location loc;
 		
-		public ConnectActivity(String s, Location l) {
-			id = s;
+		public ConnectActivity(View v, Location l) {
+			view = v;
 			loc = l;
 		}
 		
 		@Override
-		protected JSONObject doInBackground(String... url) {
+		protected JSONObject doInBackground(String... params) {
 			if(isNetworkAvailable()) {
 		    	OutputStream output = null;
 				JSONObject obj = null;
 				HashMap<String, String> error = new HashMap<String, String>();
 				
 				try {
-					URLConnection connection = new URL(url[0]).openConnection();
+					URLConnection connection = new URL(params[0]).openConnection();
 					connection.setConnectTimeout(10000);
 		    		connection.setDoInput(true);
 		    		connection.setDoOutput(true);
@@ -178,7 +193,7 @@ public class MasterActivity extends Activity implements LocationListener {
 			    	output = connection.getOutputStream();
 			    	
 		            String query = String.format("id=%s&latitude=%s&longitude=%s",
-		            		URLEncoder.encode(id, CHARSET),
+		            		URLEncoder.encode(params[1], CHARSET),
 		            		URLEncoder.encode(String.format("%.20f", loc.getLatitude()), CHARSET),
 		            		URLEncoder.encode(String.format("%.20f", loc.getLongitude()), CHARSET));
 		            if(query != null)
@@ -221,7 +236,8 @@ public class MasterActivity extends Activity implements LocationListener {
 		@Override
 		protected void onPostExecute(JSONObject obj) {
 			super.onPostExecute(obj);
-			((ProgressBar)findViewById(R.id.loading)).setVisibility(View.INVISIBLE);
+			loading.setVisibility(View.GONE);
+			processResponse(view, obj);
 		}
 		
 		private boolean isNetworkAvailable() {
@@ -249,11 +265,14 @@ public class MasterActivity extends Activity implements LocationListener {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		}
 		
-		((ProgressBar)findViewById(R.id.loading)).setVisibility(View.INVISIBLE);
+		check = (ToggleButton)findViewById(R.id.check);
+		loading = (ProgressBar)findViewById(R.id.loading);
+		accuracy = (TextView)findViewById(R.id.accuracy);
+		provider = (TextView)findViewById(R.id.provider);
 		
 		LayoutInflater inflater = getLayoutInflater();
 	    layout = inflater.inflate(R.layout.info, (ViewGroup)findViewById(R.id.toast_layout_root));
-	    text = (TextView)layout.findViewById(R.id.information);
+	    information = (TextView)layout.findViewById(R.id.information);
 	    
 		toast = new Toast(getApplicationContext());
 		toast.setGravity(Gravity.CENTER, 0, 0);
@@ -358,58 +377,65 @@ public class MasterActivity extends Activity implements LocationListener {
 	}
 	
 	public void onToggleClicked(View view) {
-	    TelephonyManager tMgr = (TelephonyManager)getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
-	    
 	    try {
-	    	GetLocation lokasi = new GetLocation();
+	    	check.setEnabled(false);
+	    	GetLocation lokasi = new GetLocation(view);
     		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
     			lokasi.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
     		} else {
     			lokasi.execute();
     		}
-	    	Location loc = lokasi.get();
-		    if(loc != null) {
-		    	//boolean on = ((ToggleButton)view).isChecked();
-		    	String id = null;
-			    ((TextView)findViewById(R.id.accuracy)).setText(String.format("%.5f", loc.getAccuracy()) + " m");
-			    ((TextView)findViewById(R.id.provider)).setText(loc.getProvider());
-			    
-			    if((id = tMgr.getLine1Number()) != null && !id.equals("")) {
-		    	} else if((id = tMgr.getSimSerialNumber()) != null && !id.equals("")) {
-		    	} else if((id = tMgr.getDeviceId()) != null && !id.equals("")) {
-		    	} else if((id = Secure.getString(getApplicationContext().getContentResolver(), Secure.ANDROID_ID)) != null &&
-		    			!id.equals("") && !id.equals("9774d56d682e549c")) {
-		    	}
-		    	if(id != null && !id.equals("")) {
-		    		ConnectActivity act = new ConnectActivity(id, loc);
-		    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-		    			act.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, URL_ADDRESS);
-		    		} else {
-		    			act.execute(URL_ADDRESS);
-		    		}
-		    		JSONObject response = act.get();
-		    		if(response != null) {
-		    			showInfoDialog("Response Accepted", response.optString("message"));
-		    		} else {
-		    			((ToggleButton)view).toggle();
-		    			showConnectionSettingsDialog();
-		    		}
-		    	} else {
-		    		((ToggleButton)view).toggle();
-	    			text.setText("Cannot get identificator of your mobile phone.");
-			    	toast.cancel();
-				    toast.show();
-		    	}
-	    	} else {
-	    		((ToggleButton)view).toggle();
-	    		showLocationSettingsDialog();
-	    	}
-		    if(((ProgressBar)findViewById(R.id.loading)).getVisibility() == View.VISIBLE) {
-		    	((ProgressBar)findViewById(R.id.loading)).setVisibility(View.INVISIBLE);
-		    }
 	    } catch(Exception e) {
+	    	loading.setVisibility(View.GONE);
 	    	showInfoDialog("Exception", e.getMessage());
+	    	check.setEnabled(true);
 	    }
+	}
+	
+	private void processLocation(View view, Location l) {
+		TelephonyManager tMgr = (TelephonyManager)getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+		if(l != null) {
+	    	String id = null;
+		    accuracy.setText(String.format("%.5f", l.getAccuracy()) + " m");
+		    provider.setText(l.getProvider());
+		    
+		    if((id = tMgr.getLine1Number()) != null && !id.equals("")) {
+	    	} else if((id = tMgr.getSimSerialNumber()) != null && !id.equals("")) {
+	    	} else if((id = tMgr.getDeviceId()) != null && !id.equals("")) {
+	    	} else if((id = Secure.getString(getApplicationContext().getContentResolver(), Secure.ANDROID_ID)) != null &&
+	    			!id.equals("") && !id.equals("9774d56d682e549c")) {
+	    	}
+	    	if(id != null && !id.equals("")) {
+	    		ConnectActivity act = new ConnectActivity(view, l);
+	    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+	    			act.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, URL_ADDRESS, id);
+	    		} else {
+	    			act.execute(URL_ADDRESS, id);
+	    		}
+	    	} else {
+	    		loading.setVisibility(View.GONE);
+	    		((ToggleButton)view).toggle();
+    			information.setText("Cannot get identificator of your mobile phone.");
+		    	toast.cancel();
+			    toast.show();
+			    check.setEnabled(true);
+	    	}
+    	} else {
+    		loading.setVisibility(View.GONE);
+    		((ToggleButton)view).toggle();
+    		showLocationSettingsDialog();
+    		check.setEnabled(true);
+    	}
+	}
+	
+	private void processResponse(View view, JSONObject obj) {
+		if(obj != null) {
+			showInfoDialog("Response Accepted", obj.optString("message"));
+		} else {
+			((ToggleButton)view).toggle();
+			showConnectionSettingsDialog();
+		}
+		check.setEnabled(true);
 	}
 	
 	public int getDeviceDefaultOrientation() {
@@ -435,7 +461,7 @@ public class MasterActivity extends Activity implements LocationListener {
         
         SharedPreferences isToggleChecked = getSharedPreferences(PREFS_NAME, 0);
         SharedPreferences.Editor editor = isToggleChecked.edit();
-        editor.putBoolean("isToggleChecked", ((ToggleButton)findViewById(R.id.check)).isChecked());
+        editor.putBoolean("isToggleChecked", check.isChecked());
         editor.commit();
     }
 
@@ -443,7 +469,7 @@ public class MasterActivity extends Activity implements LocationListener {
 	protected void onResume() {
         super.onResume();
         SharedPreferences isToggleChecked = getSharedPreferences(PREFS_NAME, 0);
-        ((ToggleButton)findViewById(R.id.check)).setChecked(isToggleChecked.getBoolean("isToggleChecked", false));
+        check.setChecked(isToggleChecked.getBoolean("isToggleChecked", false));
      }
 	
 	/**

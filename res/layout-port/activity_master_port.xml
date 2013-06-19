@@ -64,7 +64,8 @@
             android:layout_above="@+id/check"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="29dp"
-            android:indeterminateOnly="true" />
+            android:indeterminateOnly="true"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/provider"
