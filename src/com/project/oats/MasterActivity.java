@@ -1,5 +1,16 @@
 package com.project.oats;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.List;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -8,13 +19,19 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
@@ -24,10 +41,13 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import org.json.JSONObject;
 
 import com.project.oats.util.SystemUiHider;
 
@@ -45,9 +65,9 @@ public class MasterActivity extends Activity implements LocationListener {
 	
 	private static TextView text;
 	
-	private LocationManager lm;
-	
 	private final String PREFS_NAME = "OatsPref";
+	
+	private final String URL_ADDRESS = "http://oats.ap01.aws.af.cm/Check";
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -64,7 +84,7 @@ public class MasterActivity extends Activity implements LocationListener {
 	 * If set, will toggle the system UI visibility upon interaction. Otherwise,
 	 * will show the system UI visibility upon interaction.
 	 */
-	private static final boolean TOGGLE_ON_CLICK = true;
+	//private static final boolean TOGGLE_ON_CLICK = true;
 
 	/**
 	 * The flags to pass to {@link SystemUiHider#getInstance}.
@@ -75,6 +95,147 @@ public class MasterActivity extends Activity implements LocationListener {
 	 * The instance of the {@link SystemUiHider} for this activity.
 	 */
 	private SystemUiHider mSystemUiHider;
+	
+	private class GetLocation extends AsyncTask<Void, Void, Location> {
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			((ProgressBar)findViewById(R.id.loading)).setVisibility(View.VISIBLE);
+		}
+		
+		@Override
+		protected Location doInBackground(Void...voids) {
+			LocationManager lm = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
+			
+			Location loc1 = null, loc2 = null;
+			
+	        boolean isGPSEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+	        boolean isNetworkEnabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+	        if (!isGPSEnabled && !isNetworkEnabled) {
+	        	return null;
+	        } else {
+	            if (isNetworkEnabled) {
+	                lm.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, MasterActivity.this, Looper.getMainLooper());
+	                if (lm != null) {
+	                    loc1 = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+	                }
+	            }
+
+	            if (isGPSEnabled) {
+	            	lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, MasterActivity.this, Looper.getMainLooper());
+	                if (lm != null) {
+	                    loc2 = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+	                }
+	            }
+	            
+	            if(loc1 != null && loc2 != null) {
+	            	if(loc1.getAccuracy() < loc2.getAccuracy()) {
+	            		return loc2;
+	            	} else {
+	            		return loc1;
+	            	}
+	            } else if(loc1 != null) {
+	            	return loc1;
+	            } else if(loc2 != null) {
+	            	return loc2;
+	            } else {
+	            	return null;
+	            }
+	        }
+		}
+	}
+	
+	private class ConnectActivity extends AsyncTask<String, Void, JSONObject> {
+		
+		private final String CHARSET = "UTF-8";
+		
+		private String id;
+		
+		private Location loc;
+		
+		public ConnectActivity(String s, Location l) {
+			id = s;
+			loc = l;
+		}
+		
+		@Override
+		protected JSONObject doInBackground(String... url) {
+			if(isNetworkAvailable()) {
+		    	OutputStream output = null;
+				JSONObject obj = null;
+				HashMap<String, String> error = new HashMap<String, String>();
+				
+				try {
+					URLConnection connection = new URL(url[0]).openConnection();
+					connection.setConnectTimeout(10000);
+		    		connection.setDoInput(true);
+		    		connection.setDoOutput(true);
+		    		connection.setRequestProperty("Accept-Charset", CHARSET);
+		            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + CHARSET);
+			    	output = connection.getOutputStream();
+			    	
+		            String query = String.format("id=%s&latitude=%s&longitude=%s",
+		            		URLEncoder.encode(id, CHARSET),
+		            		URLEncoder.encode(String.format("%.20f", loc.getLatitude()), CHARSET),
+		            		URLEncoder.encode(String.format("%.20f", loc.getLongitude()), CHARSET));
+		            if(query != null)
+		                output.write(query.getBytes(CHARSET));
+		            
+					InputStream response = connection.getInputStream();
+			        HttpURLConnection httpConnection = (HttpURLConnection)connection;
+			        int status = httpConnection.getResponseCode();
+			        BufferedReader reader = null;
+			        if(status == 200) {
+			        	String message = "";
+		                reader = new BufferedReader(new InputStreamReader(response));
+		                for (String line; (line = reader.readLine()) != null;) {
+		                	message += line;
+		                }
+		                if (reader != null) {
+		                	try { reader.close(); }
+		                	catch (Exception e) { e.printStackTrace(); }
+		                }
+		                obj = new JSONObject(message);
+			        }
+		        } catch(Exception e) {
+		        	error.put("message", e.getMessage());
+		        	obj = new JSONObject(error);
+		        } finally {
+		             if (output != null) {
+		            	 try { output.close(); return obj;}
+		            	 catch (Exception e) {
+		            		 error.put("message", e.getMessage());
+		            		 obj = new JSONObject(error);
+		            		 return obj;
+		            	 }
+		             }
+		        }
+				return obj;
+		    }
+			return null;
+		}
+		
+		@Override
+		protected void onPostExecute(JSONObject obj) {
+			super.onPostExecute(obj);
+			((ProgressBar)findViewById(R.id.loading)).setVisibility(View.INVISIBLE);
+		}
+		
+		private boolean isNetworkAvailable() {
+	        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+	        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+	        
+	        // if no network is available networkInfo will be null
+	        // otherwise check if we are connected
+	        if (networkInfo != null && networkInfo.isConnected()) {
+	            return true;
+	        }
+	        return false;
+	    }
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +249,8 @@ public class MasterActivity extends Activity implements LocationListener {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		}
 		
+		((ProgressBar)findViewById(R.id.loading)).setVisibility(View.INVISIBLE);
+		
 		LayoutInflater inflater = getLayoutInflater();
 	    layout = inflater.inflate(R.layout.info, (ViewGroup)findViewById(R.id.toast_layout_root));
 	    text = (TextView)layout.findViewById(R.id.information);
@@ -96,8 +259,6 @@ public class MasterActivity extends Activity implements LocationListener {
 		toast.setGravity(Gravity.CENTER, 0, 0);
 	    toast.setDuration(Toast.LENGTH_SHORT);
 	    toast.setView(layout);
-	    
-	    lm = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.fullscreen_content);
@@ -151,11 +312,7 @@ public class MasterActivity extends Activity implements LocationListener {
 		contentView.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				if (TOGGLE_ON_CLICK) {
-					mSystemUiHider.toggle();
-				} else {
-					mSystemUiHider.show();
-				}
+				mSystemUiHider.hide();
 			}
 		});
 	}
@@ -178,9 +335,7 @@ public class MasterActivity extends Activity implements LocationListener {
 	View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
 		@Override
 		public boolean onTouch(View view, MotionEvent motionEvent) {
-			if (AUTO_HIDE) {
-				delayedHide(AUTO_HIDE_DELAY_MILLIS);
-			}
+			mSystemUiHider.hide();
 			return false;
 		}
 	};
@@ -204,40 +359,57 @@ public class MasterActivity extends Activity implements LocationListener {
 	
 	public void onToggleClicked(View view) {
 	    TelephonyManager tMgr = (TelephonyManager)getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
-	    Location loc = getLocation();
 	    
-	    if(loc != null) {
-	    	boolean on = ((ToggleButton)view).isChecked();
-	    	String id = null;
-	    	TextView t = (TextView)findViewById(R.id.identifier);
-	    	
-	    	((TextView)findViewById(R.id.latitude)).setText(String.format("%.8f", loc.getLatitude()));
-		    ((TextView)findViewById(R.id.longitude)).setText(String.format("%.8f", loc.getLongitude()));
-		    ((TextView)findViewById(R.id.accuracy)).setText(String.format("%.5f", loc.getAccuracy()) + " m");
-		    ((TextView)findViewById(R.id.provider)).setText(loc.getProvider());
-		    if (on) {
-		    	if((id = tMgr.getLine1Number()) != null && !id.equals("")) {
-		    		t.setText("Phone number: " + id);
+	    try {
+	    	GetLocation lokasi = new GetLocation();
+    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+    			lokasi.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
+    		} else {
+    			lokasi.execute();
+    		}
+	    	Location loc = lokasi.get();
+		    if(loc != null) {
+		    	//boolean on = ((ToggleButton)view).isChecked();
+		    	String id = null;
+			    ((TextView)findViewById(R.id.accuracy)).setText(String.format("%.5f", loc.getAccuracy()) + " m");
+			    ((TextView)findViewById(R.id.provider)).setText(loc.getProvider());
+			    
+			    if((id = tMgr.getLine1Number()) != null && !id.equals("")) {
 		    	} else if((id = tMgr.getSimSerialNumber()) != null && !id.equals("")) {
-		    		t.setText("SIM serial number: " + id);
 		    	} else if((id = tMgr.getDeviceId()) != null && !id.equals("")) {
-		    		t.setText("Device ID: " + id);
 		    	} else if((id = Secure.getString(getApplicationContext().getContentResolver(), Secure.ANDROID_ID)) != null &&
 		    			!id.equals("") && !id.equals("9774d56d682e549c")) {
-		    		t.setText("ANDROID_ID: " + id);
 		    	}
-		    	text.setText("You have successfully checked in.");
-		    } else {
-		    	t.setText(R.string.default_id);
-		    	text.setText("You have successfully checked out.");
+		    	if(id != null && !id.equals("")) {
+		    		ConnectActivity act = new ConnectActivity(id, loc);
+		    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+		    			act.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, URL_ADDRESS);
+		    		} else {
+		    			act.execute(URL_ADDRESS);
+		    		}
+		    		JSONObject response = act.get();
+		    		if(response != null) {
+		    			showInfoDialog("Response Accepted", response.optString("message"));
+		    		} else {
+		    			((ToggleButton)view).toggle();
+		    			showConnectionSettingsDialog();
+		    		}
+		    	} else {
+		    		((ToggleButton)view).toggle();
+	    			text.setText("Cannot get identificator of your mobile phone.");
+			    	toast.cancel();
+				    toast.show();
+		    	}
+	    	} else {
+	    		((ToggleButton)view).toggle();
+	    		showLocationSettingsDialog();
+	    	}
+		    if(((ProgressBar)findViewById(R.id.loading)).getVisibility() == View.VISIBLE) {
+		    	((ProgressBar)findViewById(R.id.loading)).setVisibility(View.INVISIBLE);
 		    }
-		    
-		    toast.cancel();
-		    toast.show();
-    	} else {
-    		((ToggleButton)view).toggle();
-    		showSettingsDialog();
-    	}
+	    } catch(Exception e) {
+	    	showInfoDialog("Exception", e.getMessage());
+	    }
 	}
 	
 	public int getDeviceDefaultOrientation() {
@@ -273,69 +445,12 @@ public class MasterActivity extends Activity implements LocationListener {
         SharedPreferences isToggleChecked = getSharedPreferences(PREFS_NAME, 0);
         ((ToggleButton)findViewById(R.id.check)).setChecked(isToggleChecked.getBoolean("isToggleChecked", false));
      }
-
-	public Location getLocation() {
-		
-		Location loc1 = null, loc2 = null;
-		
-        boolean isGPSEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-
-        boolean isNetworkEnabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-
-        if (!isGPSEnabled && !isNetworkEnabled) {
-        	return null;
-        } else {
-            if (isNetworkEnabled) {
-                lm.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, this, null);
-                if (lm != null) {
-                    loc1 = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                }
-            }
-
-            if (isGPSEnabled) {
-            	lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, null);
-                if (lm != null) {
-                    loc2 = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                }
-            }
-            
-            if(loc1 != null && loc2 != null) {
-            	if(loc1.getAccuracy() < loc2.getAccuracy()) {
-            		return loc2;
-            	} else {
-            		return loc1;
-            	}
-            } else if(loc1 != null) {
-            	return loc1;
-            } else if(loc2 != null) {
-            	return loc2;
-            } else {
-            	return null;
-            }
-        }
-	}
-	
-	@Override
-	public void onLocationChanged(Location location) {
-	}
-
-	@Override
-	public void onProviderDisabled(String arg0) {
-	}
-
-	@Override
-	public void onProviderEnabled(String arg0) {
-	}
-
-	@Override
-	public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
-	}
 	
 	/**
      * Function to show settings alert dialog
      * On pressing Settings button will lauch Settings Options
      * */
-    public void showSettingsDialog() {
+    public void showLocationSettingsDialog() {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
       
         // Setting Dialog Title
@@ -345,15 +460,9 @@ public class MasterActivity extends Activity implements LocationListener {
         alertDialog.setMessage("Current location's accuracy is below the desired accuracy. To improve it, please turn on your WiFi/Mobile Network or GPS.");
   
         // On pressing Settings button
-        alertDialog.setPositiveButton("Wireless Settings", new DialogInterface.OnClickListener() {
+        alertDialog.setPositiveButton("WiFi Settings", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog,int which) {
-            	int currentapiVersion = android.os.Build.VERSION.SDK_INT;
-            	Intent intent;
-            	if (currentapiVersion >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH){
-            		intent = new Intent(Settings.ACTION_SETTINGS);
-            	} else{
-            		intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
-            	}
+            	Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
                 startActivity(intent);
             }
         });
@@ -376,4 +485,93 @@ public class MasterActivity extends Activity implements LocationListener {
         // Showing Alert Message
         alertDialog.show();
     }
+    
+    public void showConnectionSettingsDialog() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+      
+        // Setting Dialog Title
+        alertDialog.setTitle("Connection Problem");
+  
+        // Setting Dialog Message
+        alertDialog.setMessage("Your phone is not connected to the Internet, please turn on your WiFi or Mobile Network.");
+  
+        // On pressing Settings button
+        alertDialog.setPositiveButton("WiFi", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,int which) {
+            	Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+                startActivity(intent);
+            }
+        });
+        
+     // On pressing Settings button
+        alertDialog.setNeutralButton("Mobile Network", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog,int which) {
+            	Intent intent = new Intent(android.provider.Settings.ACTION_DATA_ROAMING_SETTINGS);
+            	if(!isCallable(intent)) {
+            		intent = new Intent(Intent.ACTION_MAIN);
+            		intent.setClassName("com.android.phone", "com.android.phone.Settings");
+            	}
+                startActivity(intent);
+            }
+        });
+  
+        // on pressing cancel button
+        alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            	dialog.cancel();
+            }
+        });
+  
+        // Showing Alert Message
+        alertDialog.show();
+    }
+    
+    public void showInfoDialog(String title, String message) {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+      
+        // Setting Dialog Title
+        alertDialog.setTitle(title);
+  
+        // Setting Dialog Message
+        alertDialog.setMessage(message);
+  
+        // on pressing cancel button
+        alertDialog.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            	dialog.cancel();
+            }
+        });
+  
+        // Showing Alert Message
+        alertDialog.show();
+    }
+    
+    private boolean isCallable(Intent intent) {
+        List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        return list.size() > 0;
+    }
+
+	@Override
+	public void onLocationChanged(Location arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onProviderDisabled(String arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onProviderEnabled(String arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
+		// TODO Auto-generated method stub
+		
+	}
 }
