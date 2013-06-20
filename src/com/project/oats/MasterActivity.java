@@ -41,6 +41,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -62,11 +63,13 @@ public class MasterActivity extends Activity implements LocationListener {
 	
 	private static View layout;
 	
-	private TextView information, accuracy, provider;
+	private TextView information;
 	
 	private ToggleButton check;
 	
 	private ProgressBar loading;
+	
+	private String id;
 	
 	private final String PREFS_NAME = "OatsPref";
 	
@@ -92,7 +95,7 @@ public class MasterActivity extends Activity implements LocationListener {
 	/**
 	 * The flags to pass to {@link SystemUiHider#getInstance}.
 	 */
-	private static final int HIDER_FLAGS = SystemUiHider.FLAG_HIDE_NAVIGATION;
+	private static final int HIDER_FLAGS = SystemUiHider.FLAG_FULLSCREEN;
 
 	/**
 	 * The instance of the {@link SystemUiHider} for this activity.
@@ -237,7 +240,7 @@ public class MasterActivity extends Activity implements LocationListener {
 		protected void onPostExecute(JSONObject obj) {
 			super.onPostExecute(obj);
 			loading.setVisibility(View.GONE);
-			processResponse(view, obj);
+			processResponse(view, obj, loc);
 		}
 		
 		private boolean isNetworkAvailable() {
@@ -257,6 +260,8 @@ public class MasterActivity extends Activity implements LocationListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		
 		if(getDeviceDefaultOrientation() == Configuration.ORIENTATION_PORTRAIT) {
 			setContentView(R.layout.activity_master_port);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -265,10 +270,16 @@ public class MasterActivity extends Activity implements LocationListener {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		}
 		
+		id = null;
+		TelephonyManager tMgr = (TelephonyManager)getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+		if((id = tMgr.getSimSerialNumber()) != null && !id.equals("")) {
+    	} else if((id = tMgr.getDeviceId()) != null && !id.equals("")) {
+    	} else if((id = Secure.getString(getApplicationContext().getContentResolver(), Secure.ANDROID_ID)) != null &&
+    			!id.equals("") && !id.equals("9774d56d682e549c")) {
+    	}
+		
 		check = (ToggleButton)findViewById(R.id.check);
 		loading = (ProgressBar)findViewById(R.id.loading);
-		accuracy = (TextView)findViewById(R.id.accuracy);
-		provider = (TextView)findViewById(R.id.provider);
 		
 		LayoutInflater inflater = getLayoutInflater();
 	    layout = inflater.inflate(R.layout.info, (ViewGroup)findViewById(R.id.toast_layout_root));
@@ -392,19 +403,16 @@ public class MasterActivity extends Activity implements LocationListener {
 	    }
 	}
 	
+	public void onIdClicked(View view) {
+	    if(id != null) {
+	    	showInfoDialog("Phone ID", "Your phone id is " + id + ".");
+	    } else {
+	    	showInfoDialog("Phone ID", "Cannot get your mobile phone identificator.");
+	    }
+	}
+	
 	private void processLocation(View view, Location l) {
-		TelephonyManager tMgr = (TelephonyManager)getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
 		if(l != null) {
-	    	String id = null;
-		    accuracy.setText(String.format("%.5f", l.getAccuracy()) + " m");
-		    provider.setText(l.getProvider());
-		    
-		    if((id = tMgr.getLine1Number()) != null && !id.equals("")) {
-	    	} else if((id = tMgr.getSimSerialNumber()) != null && !id.equals("")) {
-	    	} else if((id = tMgr.getDeviceId()) != null && !id.equals("")) {
-	    	} else if((id = Secure.getString(getApplicationContext().getContentResolver(), Secure.ANDROID_ID)) != null &&
-	    			!id.equals("") && !id.equals("9774d56d682e549c")) {
-	    	}
 	    	if(id != null && !id.equals("")) {
 	    		ConnectActivity act = new ConnectActivity(view, l);
 	    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
@@ -428,9 +436,11 @@ public class MasterActivity extends Activity implements LocationListener {
     	}
 	}
 	
-	private void processResponse(View view, JSONObject obj) {
+	private void processResponse(View view, JSONObject obj, Location l) {
 		if(obj != null) {
-			showInfoDialog("Response Accepted", obj.optString("message"));
+			showInfoDialog("Response Accepted", obj.optString("message") +
+					"\nAccuracy: " + String.format("%.5f", l.getAccuracy()) + " m" +
+					"\nLocation provider: " + l.getProvider());
 		} else {
 			((ToggleButton)view).toggle();
 			showConnectionSettingsDialog();

@@ -40,14 +40,25 @@
             android:scaleType="fitStart"
             android:src="@drawable/logo" />
 
+        <ProgressBar
+            android:id="@+id/loading"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/check"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="25dp"
+            android:indeterminateOnly="true"
+            android:visibility="gone" />
+
         <ToggleButton
             android:id="@+id/check"
             android:layout_width="fill_parent"
             android:layout_height="50sp"
-            android:layout_alignParentBottom="true"
-            android:layout_marginBottom="50sp"
-            android:layout_marginLeft="50sp"
-            android:layout_marginRight="50sp"
+            android:layout_above="@+id/idbutton"
+            android:layout_marginLeft="50dp"
+            android:layout_marginRight="50dp"
+            android:layout_marginBottom="25dp"
             android:background="@drawable/check"
             android:onClick="onToggleClicked"
             android:textColor="#000000"
@@ -56,36 +67,17 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <ProgressBar
-            android:id="@+id/loading"
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/check"
+        <Button
+            android:id="@+id/idbutton"
+            android:layout_width="125sp"
+            android:layout_height="30sp"
+            android:background="@drawable/idbutton"
+            android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="29dp"
-            android:indeterminateOnly="true"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/provider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignLeft="@+id/imageView1"
-            android:layout_centerVertical="true"
-            android:text="@string/default_provider"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#000000" />
-
-        <TextView
-            android:id="@+id/accuracy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignRight="@+id/imageView1"
-            android:layout_centerVertical="true"
-            android:text="@string/default_accuracy"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#000000" />
+            android:text="@string/see_phone_id"
+            android:textColor="#000000"
+            android:textSize="16sp"
+            android:onClick="onIdClicked" />
 
     </RelativeLayout>
     
