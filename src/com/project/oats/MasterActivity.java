@@ -8,8 +8,13 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.net.HttpURLConnection;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -71,9 +76,17 @@ public class MasterActivity extends Activity implements LocationListener {
 	
 	private String id;
 	
+	private GetLocation lokasi;
+	
+	private ConnectActivity act;
+	
 	private final String PREFS_NAME = "OatsPref";
 	
-	private final String URL_ADDRESS = "http://oats.ap01.aws.af.cm/Check";
+	private final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+	
+	private final String CHECKIN_ADDRESS = "http://rocky-depths-7709.herokuapp.com/employee/checkin";
+	
+	private final String CHECKOUT_ADDRESS = "http://rocky-depths-7709.herokuapp.com/employee/checkout";
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -195,7 +208,7 @@ public class MasterActivity extends Activity implements LocationListener {
 		            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + CHARSET);
 			    	output = connection.getOutputStream();
 			    	
-		            String query = String.format("id=%s&latitude=%s&longitude=%s",
+		            String query = String.format("mobile_number=%s&latitude=%s&longitude=%s",
 		            		URLEncoder.encode(params[1], CHARSET),
 		            		URLEncoder.encode(String.format("%.20f", loc.getLatitude()), CHARSET),
 		            		URLEncoder.encode(String.format("%.20f", loc.getLongitude()), CHARSET));
@@ -289,6 +302,9 @@ public class MasterActivity extends Activity implements LocationListener {
 		toast.setGravity(Gravity.CENTER, 0, 0);
 	    toast.setDuration(Toast.LENGTH_SHORT);
 	    toast.setView(layout);
+	    
+	    lokasi = null;
+	    act = null;
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.fullscreen_content);
@@ -388,9 +404,11 @@ public class MasterActivity extends Activity implements LocationListener {
 	}
 	
 	public void onToggleClicked(View view) {
-	    try {
+    	((ToggleButton)view).toggle();
+    	((ToggleButton)view).setPressed(true);
+		try {
 	    	check.setEnabled(false);
-	    	GetLocation lokasi = new GetLocation(view);
+	    	lokasi = new GetLocation(view);
     		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
     			lokasi.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
     		} else {
@@ -398,6 +416,7 @@ public class MasterActivity extends Activity implements LocationListener {
     		}
 	    } catch(Exception e) {
 	    	loading.setVisibility(View.GONE);
+	    	((ToggleButton)view).toggle();
 	    	showInfoDialog("Exception", e.getMessage());
 	    	check.setEnabled(true);
 	    }
@@ -414,7 +433,14 @@ public class MasterActivity extends Activity implements LocationListener {
 	private void processLocation(View view, Location l) {
 		if(l != null) {
 	    	if(id != null && !id.equals("")) {
-	    		ConnectActivity act = new ConnectActivity(view, l);
+	    		String URL_ADDRESS;
+	    		if(((ToggleButton)view).isChecked()) {
+	    			URL_ADDRESS = CHECKOUT_ADDRESS;
+	    		} else {
+	    			URL_ADDRESS = CHECKIN_ADDRESS;
+	    		}
+	    		
+	    		act = new ConnectActivity(view, l);
 	    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
 	    			act.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, URL_ADDRESS, id);
 	    		} else {
@@ -422,7 +448,6 @@ public class MasterActivity extends Activity implements LocationListener {
 	    		}
 	    	} else {
 	    		loading.setVisibility(View.GONE);
-	    		((ToggleButton)view).toggle();
     			information.setText("Cannot get identificator of your mobile phone.");
 		    	toast.cancel();
 			    toast.show();
@@ -430,22 +455,65 @@ public class MasterActivity extends Activity implements LocationListener {
 	    	}
     	} else {
     		loading.setVisibility(View.GONE);
-    		((ToggleButton)view).toggle();
-    		showLocationSettingsDialog();
+    		showLocationSettingsDialog(1);
     		check.setEnabled(true);
     	}
 	}
 	
 	private void processResponse(View view, JSONObject obj, Location l) {
-		if(obj != null) {
-			showInfoDialog("Response Accepted", obj.optString("message") +
-					"\nAccuracy: " + String.format("%.5f", l.getAccuracy()) + " m" +
-					"\nLocation provider: " + l.getProvider());
-		} else {
-			((ToggleButton)view).toggle();
-			showConnectionSettingsDialog();
+		try {
+			if(obj != null) {
+				String isCheckIn, isCheckOut;
+				if(((ToggleButton)view).isChecked()) {
+					isCheckIn = "checked-out";
+					isCheckOut = "checked-in";
+				} else {
+					isCheckIn = "checked-in";
+					isCheckOut = "checked-out";
+				}
+				//showInfoDialog("Info", obj.toString());
+				switch(obj.getInt("code")) {
+					case 200:
+						SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT);
+						Date date = format.parse(obj.getString("time"));
+						Calendar cal = Calendar.getInstance();
+						cal.setTime(date);
+						TimeZone tz = cal.getTimeZone();
+						showInfoDialog("Success", "You have successfully " + isCheckIn + " at " +
+								 cal.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.US) + ", " +
+								 cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + ' ' +
+								 cal.get(Calendar.DATE) + ", " +
+								 cal.get(Calendar.YEAR) + ' ' +
+								 cal.get(Calendar.HOUR) + ':' + cal.get(Calendar.MINUTE) + ':' + cal.get(Calendar.SECOND) +
+								 ' ' + cal.getDisplayName(Calendar.AM_PM, Calendar.SHORT, Locale.US) + ' ' +
+								 tz.getDisplayName(false, TimeZone.SHORT, Locale.US));
+						((ToggleButton)view).toggle();
+						break;
+					case 501:
+						showInfoDialog("Error", "Your mobile phone ID is not registered in the server.");
+						break;
+					case 502:
+						showLocationSettingsDialog(2);
+						break;
+					case 503:
+						showInfoDialog("Error", "There is a problem when accessing database in the server.");
+						break;
+					case 505:
+						showInfoDialog("Error", "You have " + isCheckIn + " before and have not " + isCheckOut + '.');
+						((ToggleButton)view).toggle();
+						break;
+					default:
+						showInfoDialog("Error", "Unknown error.");
+						break;
+				}
+			} else {
+				showConnectionSettingsDialog();
+			}
+		} catch(Exception e) {
+			showInfoDialog("Exception", e.getMessage());
+		} finally {
+			check.setEnabled(true);
 		}
-		check.setEnabled(true);
 	}
 	
 	public int getDeviceDefaultOrientation() {
@@ -469,6 +537,20 @@ public class MasterActivity extends Activity implements LocationListener {
 	protected void onPause() {
         super.onPause();
         
+        if(lokasi != null) {
+        	if(act != null) {
+        		if(!lokasi.isCancelled()) {
+        			lokasi.cancel(true);
+        		}
+        		if(!act.isCancelled()) {
+        			act.cancel(true);
+        		}
+        	} else {
+        		if(!lokasi.isCancelled()) {
+        			lokasi.cancel(true);
+        		}
+        	}
+        }
         SharedPreferences isToggleChecked = getSharedPreferences(PREFS_NAME, 0);
         SharedPreferences.Editor editor = isToggleChecked.edit();
         editor.putBoolean("isToggleChecked", check.isChecked());
@@ -486,14 +568,25 @@ public class MasterActivity extends Activity implements LocationListener {
      * Function to show settings alert dialog
      * On pressing Settings button will lauch Settings Options
      * */
-    public void showLocationSettingsDialog() {
+    public void showLocationSettingsDialog(int cases) {
+    	//cases == 1, problem retrieving location
+    	//cases == 2, current location is out of desired radius
+    	
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
-      
-        // Setting Dialog Title
-        alertDialog.setTitle("Problem Retrieving Location");
-  
-        // Setting Dialog Message
-        alertDialog.setMessage("Current location's accuracy is below the desired accuracy. To improve it, please turn on your WiFi/Mobile Network or GPS.");
+        
+        switch(cases) {
+        case 1:
+        	alertDialog.setTitle("Problem Retrieving Location");
+        	alertDialog.setMessage("There is a problem when retrieving your current location. " +
+        			"Please turn on your WiFi/Mobile Network or GPS.");
+        	break;
+        case 2:
+        	alertDialog.setTitle("Fail to Check-In/Out");
+        	alertDialog.setMessage("Your current location is outside of the desired radius. " +
+        			"Current location accuracy maybe the cause of this. " +
+        			"Would you like to turn on your WiFi/Mobile Network or GPS to improve accuracy?");
+        	break;
+        }
   
         // On pressing Settings button
         alertDialog.setPositiveButton("WiFi Settings", new DialogInterface.OnClickListener() {
