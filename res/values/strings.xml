@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Oats</string>
     <string name="check_in">Check in</string>
     <string name="check_out">Check out</string>
     <string name="logo">Logo</string>
     <string name="background">Background</string>
-    <string name="see_phone_id">Get Phone ID</string>
+    <string name="login">Login</string>
+    <string name="email">E-mail Address</string>
+    <string name="pass">Password</string>
+
 </resources>

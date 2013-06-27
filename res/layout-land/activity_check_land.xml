@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    android:background="@drawable/backcolor" 
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_alignParentBottom="true"
+	xmlns:android="http://schemas.android.com/apk/res/android" >
+	
+    <ImageView
+        android:id="@id/imageView2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" 
+        android:src="@drawable/background"
+        android:scaleType="fitXY"
+        android:contentDescription="@string/background" />
+    
+    <RelativeLayout
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:id="@id/fullscreen_content"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_margin="0.0sp" >
+        
+        <RelativeLayout
+            android:id="@id/fullscreen_content_controls"
+            android:layout_width="0.0sp"
+            android:layout_height="0.0sp" />
+        
+        <ImageView
+            android:id="@id/imageView1"
+            android:layout_width="fill_parent" 
+            android:layout_height="fill_parent"
+            android:layout_marginLeft="200.0sp"
+            android:layout_marginTop="10.0sp"
+            android:layout_marginRight="200.0sp"
+            android:src="@drawable/logo"
+            android:scaleType="fitStart"
+            android:layout_alignParentTop="true"
+            android:contentDescription="@string/logo" />
+        
+        <ProgressBar
+            android:id="@+id/loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/check"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="25dp"
+            android:indeterminateOnly="true"
+            android:visibility="gone" />
+        
+        <ToggleButton
+            android:textSize="20.0sp"
+            android:textStyle="bold"
+            android:textColor="#ff000000"
+            android:id="@id/check"
+            android:background="@drawable/check"
+            android:layout_width="fill_parent"
+            android:layout_height="40.0sp"
+            android:layout_marginLeft="150.0sp"
+            android:layout_marginRight="150.0sp"
+            android:layout_marginBottom="25.0sp"
+            android:textOn="@string/check_out"
+            android:textOff="@string/check_in"
+            android:layout_alignParentBottom="true"
+            android:onClick="onToggleClicked" />
+        
+    </RelativeLayout>
+    
+</FrameLayout>
