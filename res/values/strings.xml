@@ -4,10 +4,15 @@
     <string name="app_name">Oats</string>
     <string name="check_in">Check in</string>
     <string name="check_out">Check out</string>
+    <string name="show_performance">Show Performance</string>
     <string name="logo">Logo</string>
     <string name="background">Background</string>
     <string name="login">Login</string>
     <string name="email">E-mail Address</string>
     <string name="pass">Password</string>
+    <string name="title">Performance Graph</string>
+    <string name="show">Show</string>
+	<string name="back">Back</string>
+	<string name="max_period">Maximum period range is 1 week</string>
 
 </resources>

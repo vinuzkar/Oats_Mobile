@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_above="@+id/check"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="50dp"
+            android:layout_marginBottom="20dp"
             android:indeterminateOnly="true"
             android:visibility="gone" />
 
@@ -55,16 +55,32 @@
             android:id="@+id/check"
             android:layout_width="fill_parent"
             android:layout_height="50sp"
-            android:layout_alignParentBottom="true"
+            android:layout_above="@+id/show_button"
             android:layout_centerHorizontal="true"
             android:layout_marginLeft="50dp"
             android:layout_marginRight="50dp"
-            android:layout_marginBottom="50dp"
+            android:layout_marginBottom="20dp"
             android:background="@drawable/check"
             android:onClick="onToggleClicked"
             android:textColor="#000000"
             android:textOff="@string/check_in"
             android:textOn="@string/check_out"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+        
+        <Button
+            android:id="@+id/show_button"
+            android:layout_width="fill_parent"
+            android:layout_height="40sp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="40dp"
+            android:layout_marginRight="40dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/neutral_button"
+            android:onClick="onShowPerformanceClicked"
+            android:textColor="#000000"
+            android:text="@string/show_performance"
             android:textSize="20sp"
             android:textStyle="bold" />
 

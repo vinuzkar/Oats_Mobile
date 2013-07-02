@@ -20,10 +20,11 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.project.oats.MasterActivity"
+            android:name="com.project.oats.CheckActivity"
             android:configChanges="keyboardHidden|screenSize"
             android:label="@string/app_name"
             android:theme="@style/FullscreenTheme" >
+            
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -31,12 +32,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.project.oats.CheckActivity"
+            android:name="com.project.oats.LoginActivity"
             android:configChanges="keyboardHidden|screenSize"
             android:theme="@style/FullscreenTheme" >
         </activity>
         <activity
-            android:name="com.project.oats.LoginActivity"
+            android:name="com.project.oats.PerformanceActivity"
             android:configChanges="keyboardHidden|screenSize"
             android:theme="@style/FullscreenTheme" >
         </activity>

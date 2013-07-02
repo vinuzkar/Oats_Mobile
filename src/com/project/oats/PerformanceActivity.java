@@ -1,48 +1,45 @@
 package com.project.oats;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 
-import org.json.JSONObject;
-
+import com.androidplot.series.XYSeries;
+import com.androidplot.xy.BarFormatter;
+import com.androidplot.xy.SimpleXYSeries;
+import com.androidplot.xy.XYPlot;
 import com.project.oats.util.SystemUiHider;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
+import android.app.DatePickerDialog;
+import android.app.DatePickerDialog.OnDateSetListener;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.view.Gravity;
-import android.view.LayoutInflater;
+import android.text.Html;
+import android.text.format.DateFormat;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.DatePicker;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -53,25 +50,23 @@ import android.widget.Toast;
  * 
  * @see SystemUiHider
  */
-public class LoginActivity extends Activity {
+public class PerformanceActivity extends Activity {
 	
-	private static Toast toast;
+	private Button from, to;
 	
-	private static View layout;
+	private XYPlot graph;
 	
-	private TextView information;
+	private int mDate, mMonth, mYear;
 	
-	private EditText userid, pass;
+	private int datePickerId;
 	
-	private ProgressBar loading;
+	private OnDateSetListener dateSetListener;
 	
-	private Button login;
+	private Date fromDate, toDate;
 	
-	private LoginTask logtask;
+	private final long ONE_WEEK = 604800000;
 	
-	private final String LOGIN_ADDRESS = "http://quiet-meadow-1305.herokuapp.com/mobile_signin";
-	
-	private final String PREFS_NAME = "OatsPref";
+	private final int DATEPICKER = 0xFFFFFF;
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -82,7 +77,7 @@ public class LoginActivity extends Activity {
 	 * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
 	 * user interaction before hiding the system UI.
 	 */
-	private static final int AUTO_HIDE_DELAY_MILLIS = 0;
+	private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
 
 	/**
 	 * The flags to pass to {@link SystemUiHider#getInstance}.
@@ -101,27 +96,69 @@ public class LoginActivity extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		
 		if(getDeviceDefaultOrientation() == Configuration.ORIENTATION_PORTRAIT) {
-			setContentView(R.layout.activity_login_port);
+			setContentView(R.layout.activity_performance_port);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		} else {
+		}/* else {
 			setContentView(R.layout.activity_login_land);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-		}
+		}*/
 		
-		userid = (EditText)findViewById(R.id.userid);
-		pass = (EditText)findViewById(R.id.pass);
-		loading = (ProgressBar)findViewById(R.id.login_loading);
-		login = (Button)findViewById(R.id.login);
-		logtask = null;
+		from = (Button)findViewById(R.id.from);
+		to = (Button)findViewById(R.id.to);
 		
-		LayoutInflater inflater = getLayoutInflater();
-	    layout = inflater.inflate(R.layout.info, (ViewGroup)findViewById(R.id.toast_layout_root));
-	    information = (TextView)layout.findViewById(R.id.information);
+		graph = (XYPlot)findViewById(R.id.graph);
+		Number axis[] = {0};
+		Number ordinat[] = {0};
+		XYSeries series = new SimpleXYSeries(
+                Arrays.asList(axis),
+                Arrays.asList(ordinat),
+                "Performance Graph");
+		graph.addSeries(series, new BarFormatter(Color.argb(100, 0, 200, 0), Color.rgb(0, 80, 0)));
+		graph.setDomainStepValue(3);
+		graph.setTicksPerRangeLabel(3);
+		
+		graph.setDomainLabel("Date");
+		graph.getDomainLabelWidget().pack();
+		graph.setRangeLabel("Worktime");
+		graph.getRangeLabelWidget().pack();
+		graph.setGridPadding(15, 0, 15, 0);
+		
+		Calendar c = Calendar.getInstance();
+		c.set(Calendar.HOUR, 0);
+		c.set(Calendar.MINUTE, 0);
+		c.set(Calendar.SECOND, 0);
+		c.set(Calendar.MILLISECOND, 0);
+		fromDate = c.getTime();
+		toDate = c.getTime();
+	    from.setText(Html.fromHtml("<small>From:</small> " +
+	    		c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + ' ' +
+	    		c.get(Calendar.DATE) + ", " + c.get(Calendar.YEAR)));
+	    to.setText(Html.fromHtml("<small>To:</small> " +
+	    		c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + ' ' +
+	    		c.get(Calendar.DATE) + ", " + c.get(Calendar.YEAR)));
 	    
-		toast = new Toast(getApplicationContext());
-		toast.setGravity(Gravity.CENTER, 0, 0);
-	    toast.setDuration(Toast.LENGTH_SHORT);
-	    toast.setView(layout);
+	    dateSetListener = new OnDateSetListener() {
+
+			@Override
+			public void onDateSet(DatePicker view, int year, int monthOfYear,
+					int dayOfMonth) {
+				String months[] = {"January ", "February ", "March ", "April ", "May ", "June ",
+						"July ", "August ", "September ", "October ", "November ", "December "
+				};
+				
+				Button b = (Button)findViewById(datePickerId);
+				if(datePickerId == R.id.from) {
+					b.setText(Html.fromHtml("<small>From:</small> " +
+							months[view.getMonth()] + view.getDayOfMonth() + ", " + view.getYear()));
+					fromDate= (new GregorianCalendar(view.getYear(), view.getMonth(), view.getDayOfMonth())).getTime();
+				} else if(datePickerId == R.id.to) {
+					b.setText(Html.fromHtml("<small>To:</small> " +
+							months[view.getMonth()] + view.getDayOfMonth() + ", " + view.getYear()));
+					toDate= (new GregorianCalendar(view.getYear(), view.getMonth(), view.getDayOfMonth())).getTime();
+				}
+			}
+	    	
+	    };
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.fullscreen_content);
@@ -222,26 +259,6 @@ public class LoginActivity extends Activity {
 		mHideHandler.postDelayed(mHideRunnable, delayMillis);
 	}
 	
-	public void onLoginClicked(View view) {
-		try {
-	    	login.setEnabled(false);
-	    	if(!userid.getText().toString().equals("") && !pass.getText().toString().equals("")) {
-		    	logtask = new LoginTask(LOGIN_ADDRESS);
-	    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-	    			logtask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, userid.getText().toString(), pass.getText().toString());
-	    		} else {
-	    			logtask.execute(userid.getText().toString(), pass.getText().toString());
-	    		}
-	    	} else {
-	    		login.setEnabled(true);
-	    	}
-	    } catch(Exception e) {
-	    	loading.setVisibility(View.GONE);
-	    	showInfoDialog("Exception", e.getMessage());
-	    	login.setEnabled(true);
-	    }
-	}
-	
 	private int getDeviceDefaultOrientation() {
 
 	    WindowManager windowManager =  (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -259,54 +276,40 @@ public class LoginActivity extends Activity {
 	      return Configuration.ORIENTATION_PORTRAIT;
 	}
 	
-	@Override
-	protected void onPause() {
-        super.onPause();
+	public void showDatePicker(View view) {
+        final Calendar c = Calendar.getInstance();
+        mDate = c.get(Calendar.DATE);
+        mMonth = c.get(Calendar.MONTH);
+        mYear = c.get(Calendar.YEAR);
         
-        if(logtask != null) {
-        	logtask.cancel(true);
+        if(((Button)view).getId() == R.id.from) {
+        	datePickerId = R.id.from;
+        } else if(((Button)view).getId() == R.id.to) {
+        	datePickerId = R.id.to;
         }
+        
+        showDialog(DATEPICKER);
     }
 	
-	private void processResponse(JSONObject obj) {
-		try {
-			if(obj != null) {
-				//showInfoDialog("Info", obj.toString());
-				switch(obj.getInt("code")) {
-					case 200:
-		    			information.setText("You have successfully logged-in.");
-				    	toast.cancel();
-					    toast.show();
-					    SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
-				        SharedPreferences.Editor editor = pref.edit();
-				        editor.putString("token", obj.optString("access_token"));
-				        editor.commit();
-				        startActivity(new Intent(this, CheckActivity.class));
-				        finish();
-						break;
-					case 501:
-						showInfoDialog("Error", "Combination of e-mail and password is not matched.");
-						break;
-					case 502:
-						showInfoDialog("Error", "Your e-mail is not registered in the server.");
-						break;
-					case 503:
-						showInfoDialog("Error", "There is a problem when accessing database in the server.");
-						break;
-					default:
-						showInfoDialog("Error", "Unknown error.");
-						break;
-				}
-				loading.setVisibility(View.GONE);
-			} else {
-				loading.setVisibility(View.GONE);
-				showConnectionSettingsDialog();
-			}
-		} catch(Exception e) {
-			loading.setVisibility(View.GONE);
-			showInfoDialog("Exception", e.getMessage());
-		} finally {
-			login.setEnabled(true);
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		switch(id) {
+		case DATEPICKER:
+			return new DatePickerDialog(this, dateSetListener, mYear, mMonth, mDate);
+		default:
+			return null;
+		}
+	}
+	
+	public void onShowClicked(View view) {
+		long fromEpoch = fromDate.getTime();
+		long toEpoch = toDate.getTime();
+		if(toEpoch - fromEpoch > 0 && toEpoch - fromEpoch <= ONE_WEEK) {
+			
+		} else if(toEpoch - fromEpoch <= 0) {
+			showInfoDialog("Error", "The 'to' date must be later than the 'from' date.");
+		} else if(toEpoch - fromEpoch > ONE_WEEK) {
+			showInfoDialog("Error", "The period exceeds the limit (1 week).");
 		}
 	}
 	
@@ -374,95 +377,4 @@ public class LoginActivity extends Activity {
         List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
         return list.size() > 0;
     }
-    
-    private class LoginTask extends AsyncTask<String, Void, JSONObject> {
-		
-		private final String CHARSET = "UTF-8";
-		
-		private String ADDRESS;
-		
-		public LoginTask(String s) {
-			ADDRESS = s;
-		}
-		
-		@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
-			loading.setVisibility(View.VISIBLE);
-		}
-		
-		@Override
-		protected JSONObject doInBackground(String... params) {
-			if(isNetworkAvailable()) {
-		    	OutputStream output = null;
-				JSONObject obj = null;
-				HashMap<String, String> error = new HashMap<String, String>();
-				
-				try {
-					URLConnection connection = new URL(ADDRESS).openConnection();
-					connection.setConnectTimeout(10000);
-		    		connection.setDoInput(true);
-		    		connection.setDoOutput(true);
-		    		connection.setRequestProperty("Accept-Charset", CHARSET);
-		            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + CHARSET);
-			    	output = connection.getOutputStream();
-			    	
-		            String query = String.format("email=%s&password=%s",
-		            		URLEncoder.encode(params[0], CHARSET),
-		            		URLEncoder.encode(params[1], CHARSET));
-		            if(query != null)
-		                output.write(query.getBytes(CHARSET));
-		            
-					InputStream response = connection.getInputStream();
-			        HttpURLConnection httpConnection = (HttpURLConnection)connection;
-			        int status = httpConnection.getResponseCode();
-			        BufferedReader reader = null;
-			        if(status == 200) {
-			        	String message = "";
-		                reader = new BufferedReader(new InputStreamReader(response));
-		                for (String line; (line = reader.readLine()) != null;) {
-		                	message += line;
-		                }
-		                if (reader != null) {
-		                	try { reader.close(); }
-		                	catch (Exception e) { e.printStackTrace(); }
-		                }
-		                obj = new JSONObject(message);
-			        }
-		        } catch(Exception e) {
-		        	error.put("message", e.getMessage());
-		        	obj = new JSONObject(error);
-		        } finally {
-		             if (output != null) {
-		            	 try { output.close(); return obj;}
-		            	 catch (Exception e) {
-		            		 error.put("message", e.getMessage());
-		            		 obj = new JSONObject(error);
-		            		 return obj;
-		            	 }
-		             }
-		        }
-				return obj;
-		    }
-			return null;
-		}
-		
-		@Override
-		protected void onPostExecute(JSONObject obj) {
-			super.onPostExecute(obj);
-			processResponse(obj);
-		}
-		
-		private boolean isNetworkAvailable() {
-	        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-	        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-	        
-	        // if no network is available networkInfo will be null
-	        // otherwise check if we are connected
-	        if (networkInfo != null && networkInfo.isConnected()) {
-	            return true;
-	        }
-	        return false;
-	    }
-	}
 }

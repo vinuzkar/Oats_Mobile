@@ -38,8 +38,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.provider.Settings.Secure;
-import android.telephony.TelephonyManager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -84,9 +82,9 @@ public class CheckActivity extends Activity implements LocationListener {
 	
 	private final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 	
-	private final String CHECKIN_ADDRESS = "http://oats.ap01.aws.af.cm/Checkin";
+	private final String CHECKIN_ADDRESS = "http://quiet-meadow-1305.herokuapp.com/checkin";
 	
-	private final String CHECKOUT_ADDRESS = "http://oats.ap01.aws.af.cm/Checkout";
+	private final String CHECKOUT_ADDRESS = "http://quiet-meadow-1305.herokuapp.com/checkout";
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -260,6 +258,10 @@ public class CheckActivity extends Activity implements LocationListener {
 	    }
 	}
 	
+	public void onShowPerformanceClicked(View view) {
+		startActivity(new Intent(this, PerformanceActivity.class));
+	}
+	
 	private void processLocation(View view, Location l) {
 		if(l != null) {
 	    	if(id != null && !id.equals("")) {
@@ -330,8 +332,8 @@ public class CheckActivity extends Activity implements LocationListener {
 					case 503:
 						showInfoDialog("Error", "There is a problem when accessing database in the server.");
 						break;
-					case 505:
-						showInfoDialog("Error", "You have " + isCheckIn + " before and have not " + isCheckOut + '.');
+					case 504:
+						showInfoDialog("Error", "You have " + isCheckIn + " before and have not " + isCheckOut + "again.");
 						((ToggleButton)view).toggle();
 						break;
 					default:
