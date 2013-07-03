@@ -13,6 +13,6 @@
     <string name="title">Performance Graph</string>
     <string name="show">Show</string>
 	<string name="back">Back</string>
-	<string name="max_period">Maximum period range is 1 week</string>
+	<string name="max_period">Maximum period is 10 days</string>
 
 </resources>

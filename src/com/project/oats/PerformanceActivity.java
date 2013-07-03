@@ -1,16 +1,33 @@
 package com.project.oats;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.androidplot.series.XYSeries;
 import com.androidplot.xy.BarFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
+import com.androidplot.xy.XYStepMode;
 import com.project.oats.util.SystemUiHider;
 
 import android.annotation.TargetApi;
@@ -19,13 +36,21 @@ import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.Shader;
+import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -43,6 +68,7 @@ import android.widget.DatePicker;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -54,6 +80,8 @@ public class PerformanceActivity extends Activity {
 	
 	private Button from, to;
 	
+	private ProgressBar loading;
+	
 	private XYPlot graph;
 	
 	private int mDate, mMonth, mYear;
@@ -64,7 +92,19 @@ public class PerformanceActivity extends Activity {
 	
 	private Date fromDate, toDate;
 	
-	private final long ONE_WEEK = 604800000;
+	private PerformanceTask perftask;
+	
+	private XYSeries series;
+	
+	private BarFormatter formatter;
+	
+	private final String PERFORMANCE_ADDRESS = "http://oatsdaily.herokuapp.com/mobile_graph";
+	
+	private final String PREFS_NAME = "OatsPref";
+	
+	private final String DATE_FORMAT = "dd-MM-yyyy";
+	
+	private final long TEN_DAYS = 777600000;
 	
 	private final int DATEPICKER = 0xFFFFFF;
 	/**
@@ -105,23 +145,42 @@ public class PerformanceActivity extends Activity {
 		
 		from = (Button)findViewById(R.id.from);
 		to = (Button)findViewById(R.id.to);
-		
+		loading = (ProgressBar)findViewById(R.id.performanceLoading);
 		graph = (XYPlot)findViewById(R.id.graph);
-		Number axis[] = {0};
-		Number ordinat[] = {0};
-		XYSeries series = new SimpleXYSeries(
-                Arrays.asList(axis),
-                Arrays.asList(ordinat),
-                "Performance Graph");
-		graph.addSeries(series, new BarFormatter(Color.argb(100, 0, 200, 0), Color.rgb(0, 80, 0)));
-		graph.setDomainStepValue(3);
-		graph.setTicksPerRangeLabel(3);
+		perftask = null;
 		
-		graph.setDomainLabel("Date");
+		Paint filler = new Paint();
+		filler.setAlpha(200);
+		filler.setShader(new LinearGradient(0, 0, 0, 100, Color.rgb(102, 153, 0), Color.rgb(146, 197, 0), Shader.TileMode.MIRROR));
+		
+		formatter = new BarFormatter(Color.argb(200, 0, 0, 0), Color.rgb(146, 197, 0));
+		formatter.setFillPaint(filler);
+		
+		Number ordinat[] = {0};
+		series = new SimpleXYSeries(
+                Arrays.asList(ordinat),
+                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY,
+                "Worktime");
+		graph.addSeries(series, formatter);
+		graph.setTicksPerRangeLabel(2);
+		graph.setGridPadding(10, 5, 10, 0);
+		
+		graph.setDomainStep(XYStepMode.INCREMENT_BY_VAL, 1);
+		graph.setDomainLabel("Date Offset");
 		graph.getDomainLabelWidget().pack();
-		graph.setRangeLabel("Worktime");
+		graph.setRangeLabel("Worktime (hr)");
 		graph.getRangeLabelWidget().pack();
-		graph.setGridPadding(15, 0, 15, 0);
+		graph.setRangeBottomMax(0);
+		
+		graph.getGraphWidget().getGridBackgroundPaint().setColor(Color.WHITE);
+		graph.getGraphWidget().getGridDomainLinePaint().setColor(Color.WHITE);
+        graph.getGraphWidget().getRangeOriginLinePaint().setColor(Color.BLACK);
+        graph.getGraphWidget().setMarginTop(15);
+        graph.getGraphWidget().setMarginBottom(10);
+        graph.getLegendWidget().setVisible(false);
+        graph.disableAllMarkup();
+        
+        graph.setDomainValueFormat(new DecimalFormat("0"));
 		
 		Calendar c = Calendar.getInstance();
 		c.set(Calendar.HOUR, 0);
@@ -276,6 +335,7 @@ public class PerformanceActivity extends Activity {
 	      return Configuration.ORIENTATION_PORTRAIT;
 	}
 	
+	@SuppressWarnings("deprecation")
 	public void showDatePicker(View view) {
         final Calendar c = Calendar.getInstance();
         mDate = c.get(Calendar.DATE);
@@ -304,12 +364,69 @@ public class PerformanceActivity extends Activity {
 	public void onShowClicked(View view) {
 		long fromEpoch = fromDate.getTime();
 		long toEpoch = toDate.getTime();
-		if(toEpoch - fromEpoch > 0 && toEpoch - fromEpoch <= ONE_WEEK) {
-			
-		} else if(toEpoch - fromEpoch <= 0) {
-			showInfoDialog("Error", "The 'to' date must be later than the 'from' date.");
-		} else if(toEpoch - fromEpoch > ONE_WEEK) {
+		if(toEpoch - fromEpoch >= 0 && toEpoch - fromEpoch <= TEN_DAYS) {
+			perftask = new PerformanceTask(PERFORMANCE_ADDRESS);
+    		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+    			perftask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, fromDate, toDate);
+    		} else {
+    			perftask.execute(fromDate, toDate);
+    		}
+		} else if(toEpoch - fromEpoch < 0) {
+			showInfoDialog("Error", "The 'to' date must be later than or equals the 'from' date.");
+		} else if(toEpoch - fromEpoch > TEN_DAYS) {
 			showInfoDialog("Error", "The period exceeds the limit (1 week).");
+		}
+	}
+	
+	@Override
+	protected void onPause() {
+        super.onPause();
+        
+        if(perftask != null) {
+        	perftask.cancel(true);
+        }
+    }
+	
+	private void processResponse(JSONObject obj) {
+		try {
+			//showInfoDialog("Info", obj.toString());
+			if(obj != null) {
+				switch(obj.getInt("code")) {
+					case 200:
+						LinkedList<Number> worktime = new LinkedList<Number>();
+						JSONArray performance = obj.getJSONArray("performance");
+						for(int i = 0; i < performance.length(); i++) {
+							worktime.add(performance.getJSONObject(i).getDouble("worktime"));
+						}
+						graph.removeSeries(series);
+						series = new SimpleXYSeries(
+				                worktime,
+				                SimpleXYSeries.ArrayFormat.Y_VALS_ONLY,
+				                "Worktime");
+						graph.addSeries(series, formatter);
+						graph.redraw();
+						break;
+					case 501:
+						showInfoDialog("Error", "Combination of e-mail and password is not matched.");
+						break;
+					case 502:
+						showInfoDialog("Error", "Your e-mail is not registered in the server.");
+						break;
+					case 503:
+						showInfoDialog("Error", "There is a problem when accessing database in the server.");
+						break;
+					default:
+						showInfoDialog("Error", "Unknown error.");
+						break;
+				}
+				loading.setVisibility(View.INVISIBLE);
+			} else {
+				loading.setVisibility(View.INVISIBLE);
+				showConnectionSettingsDialog();
+			}
+		} catch(Exception e) {
+			loading.setVisibility(View.INVISIBLE);
+			showInfoDialog("Exception", e.getMessage());
 		}
 	}
 	
@@ -377,4 +494,98 @@ public class PerformanceActivity extends Activity {
         List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
         return list.size() > 0;
     }
+    
+    private class PerformanceTask extends AsyncTask<Date, Void, JSONObject> {
+		
+		private final String CHARSET = "UTF-8";
+		
+		private String ADDRESS;
+		
+		public PerformanceTask(String s) {
+			ADDRESS = s;
+		}
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			loading.setVisibility(View.VISIBLE);
+		}
+		
+		@Override
+		protected JSONObject doInBackground(Date... params) {
+			if(isNetworkAvailable()) {
+		    	OutputStream output = null;
+				JSONObject obj = null;
+				HashMap<String, String> error = new HashMap<String, String>();
+				
+				try {
+					URLConnection connection = new URL(ADDRESS).openConnection();
+					connection.setConnectTimeout(10000);
+		    		connection.setDoInput(true);
+		    		connection.setDoOutput(true);
+		    		connection.setRequestProperty("Accept-Charset", CHARSET);
+		            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + CHARSET);
+			    	output = connection.getOutputStream();
+			    	
+			    	SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
+			    	SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT);
+		            String query = String.format("access_token=%s&from=%s&to=%s",
+		            		URLEncoder.encode(pref.getString("token", ""), CHARSET),
+		            		URLEncoder.encode(format.format(params[0]), CHARSET),
+		            		URLEncoder.encode(format.format(params[1]), CHARSET));
+		            if(query != null)
+		                output.write(query.getBytes(CHARSET));
+		            
+					InputStream response = connection.getInputStream();
+			        HttpURLConnection httpConnection = (HttpURLConnection)connection;
+			        int status = httpConnection.getResponseCode();
+			        BufferedReader reader = null;
+			        if(status == 200) {
+			        	String message = "";
+		                reader = new BufferedReader(new InputStreamReader(response));
+		                for (String line; (line = reader.readLine()) != null;) {
+		                	message += line;
+		                }
+		                if (reader != null) {
+		                	try { reader.close(); }
+		                	catch (Exception e) { e.printStackTrace(); }
+		                }
+		                obj = new JSONObject(message);
+			        }
+		        } catch(Exception e) {
+		        	error.put("message", e.getMessage());
+		        	obj = new JSONObject(error);
+		        } finally {
+		             if (output != null) {
+		            	 try { output.close(); return obj;}
+		            	 catch (Exception e) {
+		            		 error.put("message", e.getMessage());
+		            		 obj = new JSONObject(error);
+		            		 return obj;
+		            	 }
+		             }
+		        }
+				return obj;
+		    }
+			return null;
+		}
+		
+		@Override
+		protected void onPostExecute(JSONObject obj) {
+			super.onPostExecute(obj);
+			processResponse(obj);
+		}
+		
+		private boolean isNetworkAvailable() {
+	        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+	        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+	        
+	        // if no network is available networkInfo will be null
+	        // otherwise check if we are connected
+	        if (networkInfo != null && networkInfo.isConnected()) {
+	            return true;
+	        }
+	        return false;
+	    }
+	}
 }

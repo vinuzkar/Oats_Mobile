@@ -82,9 +82,9 @@ public class CheckActivity extends Activity implements LocationListener {
 	
 	private final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 	
-	private final String CHECKIN_ADDRESS = "http://quiet-meadow-1305.herokuapp.com/checkin";
+	private final String CHECKIN_ADDRESS = "http://oatsdaily.herokuapp.com/checkin";
 	
-	private final String CHECKOUT_ADDRESS = "http://quiet-meadow-1305.herokuapp.com/checkout";
+	private final String CHECKOUT_ADDRESS = "http://oatsdaily.herokuapp.com/checkout";
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -395,7 +395,7 @@ public class CheckActivity extends Activity implements LocationListener {
 	protected void onResume() {
         super.onResume();
         SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
-        if((id = pref.getString("token", "")) == null || id.equals("")) {
+        if((id = pref.getString("token", "")).equals("")) {
         	startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
