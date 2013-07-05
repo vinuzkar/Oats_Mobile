@@ -83,7 +83,7 @@
 	            android:layout_marginRight="15dp"
 	            android:background="@drawable/positive_button"
 	            android:text="@string/show"
-	            android:textColor="#000000"
+	            android:textColor="#ffffff"
 	            android:textSize="14sp"
 	            android:textStyle="bold"
 	            android:onClick="onShowClicked" />
@@ -92,7 +92,7 @@
 	    
         <RelativeLayout
 	        android:id="@+id/rightSide"
-	        android:layout_width="125sp"
+	        android:layout_width="100sp"
 	        android:layout_height="wrap_content"
 	        android:layout_marginTop="0sp"
 	        android:layout_marginRight="0sp"
@@ -103,10 +103,11 @@
 	    
 	        <ImageView
 	            android:id="@+id/imageView1"
-	            android:layout_width="100sp"
-	            android:layout_height="90sp"
+	            android:layout_width="50sp"
+	            android:layout_height="50sp"
 	            android:layout_centerHorizontal="true"
 	            android:layout_alignParentTop="true"
+	            android:layout_marginTop="10sp"
 	            android:contentDescription="@string/logo"
 	            android:src="@drawable/logo" />
 	        

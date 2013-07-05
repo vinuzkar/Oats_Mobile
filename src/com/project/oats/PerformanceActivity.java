@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,7 +47,6 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Shader;
-import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -56,8 +54,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.support.v4.app.FragmentActivity;
 import android.text.Html;
-import android.text.format.DateFormat;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
@@ -66,9 +64,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.ToggleButton;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -76,7 +71,7 @@ import android.widget.ToggleButton;
  * 
  * @see SystemUiHider
  */
-public class PerformanceActivity extends Activity {
+public class PerformanceActivity extends FragmentActivity {
 	
 	private Button from, to;
 	
@@ -84,13 +79,13 @@ public class PerformanceActivity extends Activity {
 	
 	private XYPlot graph;
 	
-	private int mDate, mMonth, mYear;
+	private int fDate, fMonth, fYear, tDate, tMonth, tYear;
 	
 	private int datePickerId;
 	
 	private OnDateSetListener dateSetListener;
 	
-	private Date fromDate, toDate;
+	private Calendar fromDate, toDate;
 	
 	private PerformanceTask perftask;
 	
@@ -98,15 +93,19 @@ public class PerformanceActivity extends Activity {
 	
 	private BarFormatter formatter;
 	
-	private final String PERFORMANCE_ADDRESS = "http://oatsdaily.herokuapp.com/mobile_graph";
+	private final String PERFORMANCE_ADDRESS = "http://oatsdailybeta.herokuapp.com/mobile_graph";
 	
 	private final String PREFS_NAME = "OatsPref";
 	
 	private final String DATE_FORMAT = "dd-MM-yyyy";
 	
+	private final int RESPONSE_CODE = 500;
+	
 	private final long TEN_DAYS = 777600000;
 	
-	private final int DATEPICKER = 0xFFFFFF;
+	private final int FROM_DATEPICKER = 0xAAAAAA;
+	
+	private final int TO_DATEPICKER = 0xFFFFFF;
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -156,7 +155,7 @@ public class PerformanceActivity extends Activity {
 		formatter = new BarFormatter(Color.argb(200, 0, 0, 0), Color.rgb(146, 197, 0));
 		formatter.setFillPaint(filler);
 		
-		Number ordinat[] = {0};
+		Number ordinat[] = {0,0,0,0,0,0,0,0,0,0};
 		series = new SimpleXYSeries(
                 Arrays.asList(ordinat),
                 SimpleXYSeries.ArrayFormat.Y_VALS_ONLY,
@@ -168,9 +167,12 @@ public class PerformanceActivity extends Activity {
 		graph.setDomainStep(XYStepMode.INCREMENT_BY_VAL, 1);
 		graph.setDomainLabel("Date Offset");
 		graph.getDomainLabelWidget().pack();
+		graph.setDomainRightMin(9);
+		
 		graph.setRangeLabel("Worktime (hr)");
 		graph.getRangeLabelWidget().pack();
 		graph.setRangeBottomMax(0);
+		graph.setRangeTopMin(8);
 		
 		graph.getGraphWidget().getGridBackgroundPaint().setColor(Color.WHITE);
 		graph.getGraphWidget().getGridDomainLinePaint().setColor(Color.WHITE);
@@ -178,7 +180,6 @@ public class PerformanceActivity extends Activity {
         graph.getGraphWidget().setMarginTop(15);
         graph.getGraphWidget().setMarginBottom(10);
         graph.getLegendWidget().setVisible(false);
-        graph.disableAllMarkup();
         
         graph.setDomainValueFormat(new DecimalFormat("0"));
 		
@@ -187,13 +188,13 @@ public class PerformanceActivity extends Activity {
 		c.set(Calendar.MINUTE, 0);
 		c.set(Calendar.SECOND, 0);
 		c.set(Calendar.MILLISECOND, 0);
-		fromDate = c.getTime();
-		toDate = c.getTime();
+		fromDate = c;
+		toDate = c;
 	    from.setText(Html.fromHtml("<small>From:</small> " +
-	    		c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + ' ' +
+	    		c.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) + ' ' +
 	    		c.get(Calendar.DATE) + ", " + c.get(Calendar.YEAR)));
 	    to.setText(Html.fromHtml("<small>To:</small> " +
-	    		c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + ' ' +
+	    		c.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) + ' ' +
 	    		c.get(Calendar.DATE) + ", " + c.get(Calendar.YEAR)));
 	    
 	    dateSetListener = new OnDateSetListener() {
@@ -208,12 +209,12 @@ public class PerformanceActivity extends Activity {
 				Button b = (Button)findViewById(datePickerId);
 				if(datePickerId == R.id.from) {
 					b.setText(Html.fromHtml("<small>From:</small> " +
-							months[view.getMonth()] + view.getDayOfMonth() + ", " + view.getYear()));
-					fromDate= (new GregorianCalendar(view.getYear(), view.getMonth(), view.getDayOfMonth())).getTime();
+							months[monthOfYear] + dayOfMonth + ", " + year));
+					fromDate = (Calendar)(new GregorianCalendar(year, monthOfYear, dayOfMonth));
 				} else if(datePickerId == R.id.to) {
 					b.setText(Html.fromHtml("<small>To:</small> " +
-							months[view.getMonth()] + view.getDayOfMonth() + ", " + view.getYear()));
-					toDate= (new GregorianCalendar(view.getYear(), view.getMonth(), view.getDayOfMonth())).getTime();
+							months[monthOfYear] + dayOfMonth + ", " + year));
+					toDate = (Calendar)(new GregorianCalendar(year, monthOfYear, dayOfMonth));
 				}
 			}
 	    	
@@ -337,39 +338,43 @@ public class PerformanceActivity extends Activity {
 	
 	@SuppressWarnings("deprecation")
 	public void showDatePicker(View view) {
-        final Calendar c = Calendar.getInstance();
-        mDate = c.get(Calendar.DATE);
-        mMonth = c.get(Calendar.MONTH);
-        mYear = c.get(Calendar.YEAR);
-        
-        if(((Button)view).getId() == R.id.from) {
+		int id = view.getId();
+        if(id == R.id.from) {
+        	fDate = fromDate.get(Calendar.DATE);
+            fMonth = fromDate.get(Calendar.MONTH);
+            fYear = fromDate.get(Calendar.YEAR);
         	datePickerId = R.id.from;
-        } else if(((Button)view).getId() == R.id.to) {
+        	showDialog(FROM_DATEPICKER);
+        } else if(id == R.id.to) {
+        	tDate = toDate.get(Calendar.DATE);
+            tMonth = toDate.get(Calendar.MONTH);
+            tYear = toDate.get(Calendar.YEAR);
         	datePickerId = R.id.to;
+        	showDialog(TO_DATEPICKER);
         }
-        
-        showDialog(DATEPICKER);
     }
 	
 	@Override
 	protected Dialog onCreateDialog(int id) {
 		switch(id) {
-		case DATEPICKER:
-			return new DatePickerDialog(this, dateSetListener, mYear, mMonth, mDate);
+		case FROM_DATEPICKER:
+			return new DatePickerDialog(this, dateSetListener, fYear, fMonth, fDate);
+		case TO_DATEPICKER:
+			return new DatePickerDialog(this, dateSetListener, tYear, tMonth, tDate);
 		default:
 			return null;
 		}
 	}
 	
 	public void onShowClicked(View view) {
-		long fromEpoch = fromDate.getTime();
-		long toEpoch = toDate.getTime();
+		long fromEpoch = fromDate.getTimeInMillis();
+		long toEpoch = toDate.getTimeInMillis();
 		if(toEpoch - fromEpoch >= 0 && toEpoch - fromEpoch <= TEN_DAYS) {
 			perftask = new PerformanceTask(PERFORMANCE_ADDRESS);
     		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-    			perftask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, fromDate, toDate);
+    			perftask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, fromDate.getTime(), toDate.getTime());
     		} else {
-    			perftask.execute(fromDate, toDate);
+    			perftask.execute(fromDate.getTime(), toDate.getTime());
     		}
 		} else if(toEpoch - fromEpoch < 0) {
 			showInfoDialog("Error", "The 'to' date must be later than or equals the 'from' date.");
@@ -407,10 +412,7 @@ public class PerformanceActivity extends Activity {
 						graph.redraw();
 						break;
 					case 501:
-						showInfoDialog("Error", "Combination of e-mail and password is not matched.");
-						break;
-					case 502:
-						showInfoDialog("Error", "Your e-mail is not registered in the server.");
+						showLoginAgainDialog();
 						break;
 					case 503:
 						showInfoDialog("Error", "There is a problem when accessing database in the server.");
@@ -483,6 +485,33 @@ public class PerformanceActivity extends Activity {
         alertDialog.setNegativeButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
             	dialog.cancel();
+            }
+        });
+  
+        // Showing Alert Message
+        alertDialog.show();
+    }
+    
+    public void showLoginAgainDialog() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+      
+        // Setting Dialog Title
+        alertDialog.setTitle("Error");
+  
+        // Setting Dialog Message
+        alertDialog.setMessage("Your phone ID is not found in the server. Please login again");
+  
+        // on pressing cancel button
+        alertDialog.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            	SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putString("token", "");
+                editor.commit();
+            	dialog.cancel();
+            	setResult(RESPONSE_CODE);
+            	startActivity(new Intent(PerformanceActivity.this, LoginActivity.class));
+				finish();
             }
         });
   

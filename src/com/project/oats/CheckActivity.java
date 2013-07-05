@@ -82,9 +82,13 @@ public class CheckActivity extends Activity implements LocationListener {
 	
 	private final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 	
-	private final String CHECKIN_ADDRESS = "http://oatsdaily.herokuapp.com/checkin";
+	private final String CHECKIN_ADDRESS = "http://oatsdailybeta.herokuapp.com/checkin";
 	
-	private final String CHECKOUT_ADDRESS = "http://oatsdaily.herokuapp.com/checkout";
+	private final String CHECKOUT_ADDRESS = "http://oatsdailybeta.herokuapp.com/checkout";
+	
+	private final int REQUEST_CODE = 1;
+	
+	private final int RESPONSE_CODE = 500;
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -259,7 +263,7 @@ public class CheckActivity extends Activity implements LocationListener {
 	}
 	
 	public void onShowPerformanceClicked(View view) {
-		startActivity(new Intent(this, PerformanceActivity.class));
+		startActivityForResult(new Intent(this, PerformanceActivity.class), REQUEST_CODE);
 	}
 	
 	private void processLocation(View view, Location l) {
@@ -322,9 +326,7 @@ public class CheckActivity extends Activity implements LocationListener {
 						((ToggleButton)view).toggle();
 						break;
 					case 501:
-						showInfoDialog("Error", "Your mobile phone identificator is not registered in the server.");
-						startActivity(new Intent(this, LoginActivity.class));
-						finish();
+						showLoginAgainDialog();
 						break;
 					case 502:
 						showLocationSettingsDialog(2);
@@ -333,7 +335,7 @@ public class CheckActivity extends Activity implements LocationListener {
 						showInfoDialog("Error", "There is a problem when accessing database in the server.");
 						break;
 					case 504:
-						showInfoDialog("Error", "You have " + isCheckIn + " before and have not " + isCheckOut + "again.");
+						showInfoDialog("Error", "You have " + isCheckIn + " before and have not " + isCheckOut + " again.");
 						((ToggleButton)view).toggle();
 						break;
 					default:
@@ -366,6 +368,15 @@ public class CheckActivity extends Activity implements LocationListener {
 	    else 
 	      return Configuration.ORIENTATION_PORTRAIT;
 	}
+	
+	@Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if(resultCode == RESPONSE_CODE && requestCode == REQUEST_CODE){
+            finish();
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 	
 	@Override
 	protected void onPause() {
@@ -506,6 +517,32 @@ public class CheckActivity extends Activity implements LocationListener {
         alertDialog.setNegativeButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
             	dialog.cancel();
+            }
+        });
+  
+        // Showing Alert Message
+        alertDialog.show();
+    }
+    
+    public void showLoginAgainDialog() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+      
+        // Setting Dialog Title
+        alertDialog.setTitle("Error");
+  
+        // Setting Dialog Message
+        alertDialog.setMessage("Your phone ID is not found in the server. Please login again");
+  
+        // on pressing cancel button
+        alertDialog.setNegativeButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            	SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putString("token", "");
+                editor.commit();
+            	dialog.cancel();
+            	startActivity(new Intent(CheckActivity.this, LoginActivity.class));
+				finish();
             }
         });
   

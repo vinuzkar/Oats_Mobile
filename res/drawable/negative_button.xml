@@ -14,7 +14,7 @@
                 android:width="1.0sp" 
                 android:color="#ff000000" />
             
-            <corners android:radius="10.0dip" />
+            <corners android:radius="5.0dip" />
             
         </shape>
         
@@ -33,7 +33,7 @@
                 android:width="1.0sp"
                 android:color="#ff000000" />
             
-            <corners android:radius="10.0dip" />
+            <corners android:radius="5.0dip" />
             
         </shape>
         

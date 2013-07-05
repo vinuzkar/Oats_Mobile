@@ -6,15 +6,15 @@
         <shape>
             
             <gradient
-                android:startColor="#f58634" 
-                android:endColor="#ffffff" 
+                android:startColor="#60c160" 
+                android:endColor="#51a351"
                 android:angle="270.0" />
             
             <stroke 
                 android:width="1.0sp"
-                android:color="#ff000000" />
+                android:color="#81cf81" />
             
-            <corners android:radius="10.0dip" />
+            <corners android:radius="5.0dip" />
             
         </shape>
         
@@ -24,16 +24,13 @@
         
         <shape>
             
-            <gradient
-                android:startColor="#c46d2d"
-                android:endColor="#ffffff"
-                android:angle="270.0" />
+            <solid android:color="#51a251" />
             
             <stroke
                 android:width="1.0sp"
-                android:color="#ff000000" />
+                android:color="#81cf81" />
             
-            <corners android:radius="10.0dip" />
+            <corners android:radius="5.0dip" />
             
         </shape>
         

@@ -52,8 +52,8 @@
 	            android:layout_alignParentTop="true"
 	            android:layout_alignParentLeft="true"
 	            android:layout_marginTop="0sp"
-	            android:layout_marginLeft="25sp"
-	            android:layout_marginRight="25sp"
+	            android:layout_marginLeft="50sp"
+	            android:layout_marginRight="50sp"
 	            android:layout_centerHorizontal="true"
 	            android:contentDescription="@string/logo"
 	            android:scaleType="fitStart"
@@ -84,7 +84,7 @@
             android:layout_marginBottom="10sp"
             android:background="@drawable/check"
             android:text="@string/login"
-            android:textColor="#000000"
+            android:textColor="#ffffff"
             android:textSize="20sp"
             android:textStyle="bold"
             android:onClick="onLoginClicked" />
@@ -101,7 +101,8 @@
             android:layout_marginLeft="25dp"
             android:layout_marginRight="25dp"
             android:ems="10"
-            android:inputType="text" />
+            android:inputType="text"
+            android:textColor="#000000" />
 
         <EditText
             android:id="@+id/pass"
@@ -114,7 +115,8 @@
             android:layout_marginLeft="25dp"
             android:layout_marginRight="25dp"
             android:ems="10"
-            android:inputType="textPassword" />
+            android:inputType="textPassword"
+            android:textColor="#000000" />
 
     </RelativeLayout>
     

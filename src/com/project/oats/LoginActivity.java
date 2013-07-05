@@ -69,7 +69,7 @@ public class LoginActivity extends Activity {
 	
 	private LoginTask logtask;
 	
-	private final String LOGIN_ADDRESS = "http://oatsdaily.herokuapp.com/mobile_signin";
+	private final String LOGIN_ADDRESS = "http://oatsdailybeta.herokuapp.com/mobile_signin";
 	
 	private final String PREFS_NAME = "OatsPref";
 	/**
