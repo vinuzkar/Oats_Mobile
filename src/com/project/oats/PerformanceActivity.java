@@ -13,7 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,11 +29,7 @@ import com.androidplot.xy.XYStepMode;
 import com.project.oats.util.SystemUiHider;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
-import android.app.DatePickerDialog.OnDateSetListener;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -62,7 +57,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.ProgressBar;
 
 /**
@@ -73,17 +67,13 @@ import android.widget.ProgressBar;
  */
 public class PerformanceActivity extends FragmentActivity {
 	
+	private long maxPeriod;
+	
 	private Button from, to;
 	
 	private ProgressBar loading;
 	
 	private XYPlot graph;
-	
-	private int fDate, fMonth, fYear, tDate, tMonth, tYear;
-	
-	private int datePickerId;
-	
-	private OnDateSetListener dateSetListener;
 	
 	private Calendar fromDate, toDate;
 	
@@ -92,6 +82,8 @@ public class PerformanceActivity extends FragmentActivity {
 	private XYSeries series;
 	
 	private BarFormatter formatter;
+	
+	private DatePickerFragment fragment;
 	
 	private final String PERFORMANCE_ADDRESS = "http://oatsdailybeta.herokuapp.com/mobile_graph";
 	
@@ -103,9 +95,7 @@ public class PerformanceActivity extends FragmentActivity {
 	
 	private final long TEN_DAYS = 777600000;
 	
-	private final int FROM_DATEPICKER = 0xAAAAAA;
-	
-	private final int TO_DATEPICKER = 0xFFFFFF;
+	private final long TWENTY_DAYS = 1728000000;
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -137,16 +127,20 @@ public class PerformanceActivity extends FragmentActivity {
 		if(getDeviceDefaultOrientation() == Configuration.ORIENTATION_PORTRAIT) {
 			setContentView(R.layout.activity_performance_port);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		}/* else {
+			maxPeriod = TEN_DAYS;
+		} else {
 			setContentView(R.layout.activity_login_land);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-		}*/
+			maxPeriod = TWENTY_DAYS;
+		}
 		
 		from = (Button)findViewById(R.id.from);
 		to = (Button)findViewById(R.id.to);
 		loading = (ProgressBar)findViewById(R.id.performanceLoading);
 		graph = (XYPlot)findViewById(R.id.graph);
 		perftask = null;
+		fragment = new DatePickerFragment();
+		fragment.setCaller(this);
 		
 		Paint filler = new Paint();
 		filler.setAlpha(200);
@@ -196,29 +190,6 @@ public class PerformanceActivity extends FragmentActivity {
 	    to.setText(Html.fromHtml("<small>To:</small> " +
 	    		c.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US) + ' ' +
 	    		c.get(Calendar.DATE) + ", " + c.get(Calendar.YEAR)));
-	    
-	    dateSetListener = new OnDateSetListener() {
-
-			@Override
-			public void onDateSet(DatePicker view, int year, int monthOfYear,
-					int dayOfMonth) {
-				String months[] = {"January ", "February ", "March ", "April ", "May ", "June ",
-						"July ", "August ", "September ", "October ", "November ", "December "
-				};
-				
-				Button b = (Button)findViewById(datePickerId);
-				if(datePickerId == R.id.from) {
-					b.setText(Html.fromHtml("<small>From:</small> " +
-							months[monthOfYear] + dayOfMonth + ", " + year));
-					fromDate = (Calendar)(new GregorianCalendar(year, monthOfYear, dayOfMonth));
-				} else if(datePickerId == R.id.to) {
-					b.setText(Html.fromHtml("<small>To:</small> " +
-							months[monthOfYear] + dayOfMonth + ", " + year));
-					toDate = (Calendar)(new GregorianCalendar(year, monthOfYear, dayOfMonth));
-				}
-			}
-	    	
-	    };
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.fullscreen_content);
@@ -319,6 +290,14 @@ public class PerformanceActivity extends FragmentActivity {
 		mHideHandler.postDelayed(mHideRunnable, delayMillis);
 	}
 	
+	public void setFromDate(Calendar c) {
+		fromDate = c;
+	}
+	
+	public void setToDate(Calendar c) {
+		toDate = c;
+	}
+	
 	private int getDeviceDefaultOrientation() {
 
 	    WindowManager windowManager =  (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -336,40 +315,22 @@ public class PerformanceActivity extends FragmentActivity {
 	      return Configuration.ORIENTATION_PORTRAIT;
 	}
 	
-	@SuppressWarnings("deprecation")
 	public void showDatePicker(View view) {
 		int id = view.getId();
+		fragment.setButton((Button)view);
         if(id == R.id.from) {
-        	fDate = fromDate.get(Calendar.DATE);
-            fMonth = fromDate.get(Calendar.MONTH);
-            fYear = fromDate.get(Calendar.YEAR);
-        	datePickerId = R.id.from;
-        	showDialog(FROM_DATEPICKER);
+        	fragment.setDate(fromDate);
+        	fragment.show(getSupportFragmentManager(), "datePicker");
         } else if(id == R.id.to) {
-        	tDate = toDate.get(Calendar.DATE);
-            tMonth = toDate.get(Calendar.MONTH);
-            tYear = toDate.get(Calendar.YEAR);
-        	datePickerId = R.id.to;
-        	showDialog(TO_DATEPICKER);
+        	fragment.setDate(toDate);
+        	fragment.show(getSupportFragmentManager(), "datePicker");
         }
     }
-	
-	@Override
-	protected Dialog onCreateDialog(int id) {
-		switch(id) {
-		case FROM_DATEPICKER:
-			return new DatePickerDialog(this, dateSetListener, fYear, fMonth, fDate);
-		case TO_DATEPICKER:
-			return new DatePickerDialog(this, dateSetListener, tYear, tMonth, tDate);
-		default:
-			return null;
-		}
-	}
 	
 	public void onShowClicked(View view) {
 		long fromEpoch = fromDate.getTimeInMillis();
 		long toEpoch = toDate.getTimeInMillis();
-		if(toEpoch - fromEpoch >= 0 && toEpoch - fromEpoch <= TEN_DAYS) {
+		if(toEpoch - fromEpoch >= 0 && toEpoch - fromEpoch <= maxPeriod) {
 			perftask = new PerformanceTask(PERFORMANCE_ADDRESS);
     		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
     			perftask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, fromDate.getTime(), toDate.getTime());
@@ -378,8 +339,8 @@ public class PerformanceActivity extends FragmentActivity {
     		}
 		} else if(toEpoch - fromEpoch < 0) {
 			showInfoDialog("Error", "The 'to' date must be later than or equals the 'from' date.");
-		} else if(toEpoch - fromEpoch > TEN_DAYS) {
-			showInfoDialog("Error", "The period exceeds the limit (1 week).");
+		} else if(toEpoch - fromEpoch > maxPeriod) {
+			showInfoDialog("Error", "The period exceeds the limit.");
 		}
 	}
 	

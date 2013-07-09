@@ -1,0 +1,153 @@
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_alignParentBottom="true"
+    android:background="@drawable/backcolor"
+    tools:context=".CheckActivity" >
+	
+    <ImageView
+        android:id="@+id/imageView2"
+        android:scaleType="fitEnd"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/background"
+        android:contentDescription="@string/background" />
+
+    <LinearLayout
+        android:id="@+id/fullscreen_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center|center_vertical"
+        android:layout_margin="10sp"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        tools:ignore="UselessParent" >
+
+        <RelativeLayout
+            android:id="@+id/fullscreen_content_controls"
+            android:layout_width="0sp"
+            android:layout_height="0sp" />
+        
+        <RelativeLayout
+	        android:id="@+id/leftSide"
+	        android:layout_weight=".25"
+	        android:layout_width="0dip"
+	        android:layout_height="fill_parent"
+	        android:layout_marginLeft="10sp"
+	        tools:ignore="UselessParent" >
+	    
+	        <ImageView
+	            android:id="@+id/imageView1"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:layout_centerHorizontal="true"
+	            android:layout_alignParentTop="true"
+	            android:layout_marginTop="10sp"
+	            android:layout_marginLeft="20sp"
+	            android:layout_marginRight="20sp"
+	            android:scaleType="fitStart"
+	            android:contentDescription="@string/logo"
+	            android:src="@drawable/logo" />
+	        
+	        <ProgressBar
+	            android:id="@+id/performanceLoading"
+	            style="?android:attr/progressBarStyleLarge"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_marginBottom="20sp"
+	            android:layout_alignParentBottom="true"
+	            android:layout_centerHorizontal="true"
+	            android:indeterminateOnly="true"
+	            android:visibility="invisible" />
+	        
+	    </RelativeLayout>
+	    
+        <RelativeLayout
+	        android:id="@+id/rightSide"
+	        android:layout_weight=".75"
+	        android:layout_width="0dip"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="10sp"
+	        tools:ignore="UselessParent" >
+	    
+	        <RelativeLayout
+		        android:id="@+id/upperRightSide"
+		        android:layout_width="fill_parent"
+		        android:layout_height="wrap_content"
+		        android:layout_marginTop="10sp"
+		        tools:ignore="UselessParent" >
+	        
+		        <LinearLayout
+			        android:id="@+id/fromToDate"
+			        android:layout_width="fill_parent"
+			        android:layout_height="wrap_content"
+			        android:layout_marginRight="5sp"
+			        android:layout_toLeftOf="@+id/show"
+			        android:orientation="horizontal"
+			        tools:ignore="UselessParent" >
+			        
+			        <Button
+			            android:id="@+id/from"
+			            style="?android:attr/buttonStyleSmall"
+			            android:layout_width="wrap_content"
+			            android:layout_height="30sp"
+			            android:layout_weight=".5"
+			            android:layout_marginRight="5sp"
+			            android:textColor="#000000"
+			            android:background="@drawable/date_picker"
+			            android:onClick="showDatePicker" />
+			        
+			        <Button
+			            android:id="@+id/to"
+			            style="?android:attr/buttonStyleSmall"
+			            android:layout_width="wrap_content"
+			            android:layout_height="30sp"
+			            android:layout_weight=".5"
+			            android:textColor="#000000"
+			            android:background="@drawable/date_picker"
+			            android:onClick="showDatePicker" />
+				        
+		        </LinearLayout>
+			        
+		        <TextView
+		            android:id="@+id/max_period"
+		            android:gravity="center"
+		            android:layout_width="fill_parent"
+		            android:layout_height="wrap_content"
+		            android:layout_marginTop="2dp"
+		            android:layout_below="@+id/fromToDate"
+		            android:layout_toLeftOf="@+id/show"
+		            android:text="@string/max_period20"
+		            android:textColor="#ff0000"
+		            android:textSize="12sp" />
+		        
+		        <Button
+		            android:id="@+id/show"
+		            android:layout_width="75sp"
+		            android:layout_height="30sp"
+			        android:layout_alignParentTop="true"
+			        android:layout_alignParentRight="true"
+		            android:background="@drawable/positive_button"
+		            android:text="@string/show"
+		            android:textColor="#ffffff"
+		            android:textSize="14sp"
+		            android:textStyle="bold"
+		            android:onClick="onShowClicked" />
+		        
+		    </RelativeLayout>
+        
+	        <com.androidplot.xy.XYPlot
+	            android:id="@+id/graph"
+	            android:layout_width="fill_parent"
+	            android:layout_height="fill_parent"
+	            android:layout_below="@+id/upperRightSide"
+	            android:layout_marginTop="10dp"
+	            androidPlot.title="Performance Graph" />
+	        
+	    </RelativeLayout>
+
+    </LinearLayout>
+    
+</FrameLayout>
