@@ -72,9 +72,11 @@ public class NotificationActivity extends FragmentActivity {
 				if(isChecked) {
 					switch(id) {
 	                case R.id.check_in_notification:
+	                	checkIn = incrementDateIfBefore(checkIn);
 	                	setNotificationTime(CHECK_IN, checkIn);
 	                	break;
 	                case R.id.check_out_notification:
+	                	checkOut = incrementDateIfBefore(checkOut);
 	                	setNotificationTime(CHECK_OUT, checkOut);
 	                	break;
 	                }
