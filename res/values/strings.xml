@@ -5,6 +5,7 @@
     <string name="check_in">Check in</string>
     <string name="check_out">Check out</string>
     <string name="show_performance">Show Performance</string>
+    <string name="set_notifications">Set Notifications</string>
     <string name="logo">Logo</string>
     <string name="background">Background</string>
     <string name="login">Login</string>
@@ -12,8 +13,10 @@
     <string name="pass">Password</string>
     <string name="title">Performance Graph</string>
     <string name="show">Show</string>
-	<string name="back">Back</string>
 	<string name="max_period10">Maximum period range is 10 days</string>
 	<string name="max_period20">Maximum period range is 20 days</string>
+	<string name="check_in_notification">Activate check-in notification</string>
+	<string name="check_out_notification">Activate check-out notification</string>
+	<string name="done">Done</string>
 
 </resources>

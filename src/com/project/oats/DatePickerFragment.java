@@ -3,6 +3,7 @@ package com.project.oats;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
+import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.Dialog;
@@ -15,7 +16,7 @@ import android.widget.DatePicker;
 public class DatePickerFragment extends DialogFragment implements
 		OnDateSetListener {
 	
-	private PerformanceActivity caller;
+	private Activity caller;
 	
 	private Button fromToButton;
 	
@@ -28,11 +29,7 @@ public class DatePickerFragment extends DialogFragment implements
 		fromToButton = null;
 	}
 	
-	public Calendar getDate() {
-		return new GregorianCalendar(mYear, mMonth, mDate);
-	}
-	
-	public void setCaller(PerformanceActivity p) {
+	public void setCaller(Activity p) {
 		caller = p;
 	}
 	
@@ -73,13 +70,13 @@ public class DatePickerFragment extends DialogFragment implements
 		
 		int datePickerId = fromToButton.getId();
 		if(datePickerId == R.id.from) {
-			fromToButton.setText(Html.fromHtml("<small>From:</small> " +
+			((PerformanceActivity)caller).setButtonText(R.id.from, Html.fromHtml("<small>From:</small> " +
 					months[month] + date + ", " + year));
-			caller.setFromDate(new GregorianCalendar(year, month, date));
+			((PerformanceActivity)caller).setFromDate(new GregorianCalendar(year, month, date));
 		} else if(datePickerId == R.id.to) {
-			fromToButton.setText(Html.fromHtml("<small>To:</small> " +
+			((PerformanceActivity)caller).setButtonText(R.id.to, Html.fromHtml("<small>To:</small> " +
 					months[month] + date + ", " + year));
-			caller.setToDate(new GregorianCalendar(year, month, date));
+			((PerformanceActivity)caller).setToDate(new GregorianCalendar(year, month, date));
 		}
 	}
 

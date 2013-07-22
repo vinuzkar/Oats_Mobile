@@ -23,11 +23,6 @@
         android:layout_margin="10sp"
         android:orientation="vertical"
         tools:ignore="UselessParent" >
-
-        <RelativeLayout
-            android:id="@+id/fullscreen_content_controls"
-            android:layout_width="0sp"
-            android:layout_height="0sp" />
         
         <RelativeLayout
 	        android:id="@+id/fromToDate"

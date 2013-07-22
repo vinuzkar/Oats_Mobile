@@ -28,11 +28,6 @@
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_centerInParent="true" />
-
-        <RelativeLayout
-            android:id="@+id/fullscreen_content_controls"
-            android:layout_width="0sp"
-            android:layout_height="0sp" />
         
 		<RelativeLayout
 	        android:id="@+id/left_side"
