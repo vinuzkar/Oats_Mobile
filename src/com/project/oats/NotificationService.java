@@ -50,7 +50,7 @@ public class NotificationService extends IntentService {
 	        case CHECKIN_ID:
 	        	i.putExtra("id", CHECKIN_ID);
 	        	i.putExtra("msg", "Oats reminder for you to check in");
-	        	pi = PendingIntent.getBroadcast(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
+	        	pi = PendingIntent.getBroadcast(this, CHECKIN_ID, i, PendingIntent.FLAG_UPDATE_CURRENT);
 	        	
 	        	time = pref.getLong("check_in_time", NULL_TIME);
 	            if (CREATE.equals(action) && time >= 0) {
@@ -65,7 +65,7 @@ public class NotificationService extends IntentService {
 	        case CHECKOUT_ID:
 	        	i.putExtra("id", CHECKOUT_ID);
 	        	i.putExtra("msg", "Oats reminder for you to check out");
-	        	pi = PendingIntent.getBroadcast(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
+	        	pi = PendingIntent.getBroadcast(this, CHECKOUT_ID, i, PendingIntent.FLAG_UPDATE_CURRENT);
 	        	
 	        	time = pref.getLong("check_out_time", NULL_TIME);
 	            if (CREATE.equals(action) && time >= 0) {
@@ -80,12 +80,12 @@ public class NotificationService extends IntentService {
 	        default:
 	        	i.putExtra("id", CHECKIN_ID);
 	        	i.putExtra("msg", "Oats reminder for you to check in");
-	        	pi = PendingIntent.getBroadcast(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
+	        	pi = PendingIntent.getBroadcast(this, CHECKIN_ID, i, PendingIntent.FLAG_UPDATE_CURRENT);
 	        	
 	        	Intent i2 = new Intent(this, NotificationReceiver.class);
 	        	i2.putExtra("id", CHECKOUT_ID);
 	        	i2.putExtra("msg", "Oats reminder for you to check out");
-	        	PendingIntent pi2 = PendingIntent.getBroadcast(this, 0, i2, PendingIntent.FLAG_UPDATE_CURRENT);
+	        	PendingIntent pi2 = PendingIntent.getBroadcast(this, CHECKOUT_ID, i2, PendingIntent.FLAG_UPDATE_CURRENT);
 	        	
 	            if (CREATE.equals(action)) {
 	            	if((time = pref.getLong("check_in_time", NULL_TIME)) >= 0) {
