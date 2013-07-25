@@ -16,7 +16,7 @@ public class TimePickerFragment extends DialogFragment implements
 	
 	private int mHour, mMinute;
 	
-	boolean is24h;
+	private boolean is24h;
 	
 	private Button timePickerButton;
 	

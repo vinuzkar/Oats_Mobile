@@ -11,6 +11,8 @@ public class OatsMobile extends Application {
 	
 	private static final String RINGTONE_PREF = "ringtone_pref";
 	
+	private static final String TIME_FORMAT = "time_format";
+	
 	@Override
     public void onCreate() {
         super.onCreate();
@@ -22,5 +24,8 @@ public class OatsMobile extends Application {
     public static String getRingtone() {
         return sp.getString(RINGTONE_PREF, System.DEFAULT_NOTIFICATION_URI.toString());
     }
-
+    
+    public static boolean is24hFormat() {
+        return sp.getBoolean(TIME_FORMAT, false);
+    }
 }

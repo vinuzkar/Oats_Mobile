@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+        
+        <WebView
+            android:id="@+id/sign_in_help"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+        	android:layout_marginRight="10dp" />
+        
+        <WebView
+            android:id="@+id/check_help"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+        	android:layout_marginRight="10dp" />
+        
+        <WebView
+            android:id="@+id/performance_help"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+        	android:layout_marginRight="10dp" />
+        
+        <WebView
+            android:id="@+id/notification_help"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+        	android:layout_marginRight="10dp" />
+        
+        <WebView
+            android:id="@+id/notification_settings_help"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+        	android:layout_marginRight="10dp" />
+            
+    </LinearLayout>
+    
+
+</ScrollView>

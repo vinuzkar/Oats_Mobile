@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
-import android.preference.RingtonePreference;
 
 public class NotificationSettingsActivity extends PreferenceActivity implements
 		OnSharedPreferenceChangeListener {
@@ -37,13 +36,25 @@ public class NotificationSettingsActivity extends PreferenceActivity implements
 	@SuppressWarnings("deprecation")
     protected void onResume(){
         super.onResume();
+        Preference pref;
         
         if (Build.VERSION.SDK_INT >= 11) {
         	fragment.getPreferenceScreen().getSharedPreferences()
         		.registerOnSharedPreferenceChangeListener(this);
+        	pref = fragment.findPreference("ringtone_pref");
         } else {
         	getPreferenceScreen().getSharedPreferences()
     			.registerOnSharedPreferenceChangeListener(this);
+        	pref = findPreference("ringtone_pref");
+        }
+        Uri ringtoneUri = Uri.parse(OatsMobile.getRingtone());
+        Ringtone ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
+        if (ringtone != null) {
+        	String title = ringtone.getTitle(this);
+        	if(title.contains("Default") || title.contains("default")) {
+        		title = "Default ringtone";
+        	}
+        	pref.setSummary(title);
         }
     }
  
@@ -63,13 +74,9 @@ public class NotificationSettingsActivity extends PreferenceActivity implements
     }
  
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        updatePreference(key);
-    }
-    
     @SuppressLint("NewApi")
 	@SuppressWarnings("deprecation")
-    private void updatePreference(String key){
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     	Preference pref;
     	if (Build.VERSION.SDK_INT >= 11) {
     		pref = fragment.findPreference(key);
@@ -77,10 +84,16 @@ public class NotificationSettingsActivity extends PreferenceActivity implements
     		pref = findPreference(key);
     	}
         
-        if (pref instanceof RingtonePreference) {
+        if (key.equals("ringtone_pref")) {
             Uri ringtoneUri = Uri.parse(OatsMobile.getRingtone());
             Ringtone ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
-            if (ringtone != null) pref.setSummary(ringtone.getTitle(this));
+            if (ringtone != null) {
+            	String title = ringtone.getTitle(this);
+            	if(title.contains("Default") || title.contains("default")) {
+            		title = "Default ringtone";
+            	}
+            	pref.setSummary(title);
+            }
         }
     }
     

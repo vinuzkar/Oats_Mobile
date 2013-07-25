@@ -34,8 +34,6 @@ public class NotificationReceiver extends BroadcastReceiver {
         }
         
         // TODO check user preferences
-        n.defaults |= Notification.DEFAULT_SOUND;  
-        n.defaults |= Notification.DEFAULT_VIBRATE;
         n.sound = Uri.parse(OatsMobile.getRingtone());
         n.flags |= Notification.FLAG_ONLY_ALERT_ONCE;
         n.flags |= Notification.FLAG_AUTO_CANCEL;      

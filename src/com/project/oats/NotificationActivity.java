@@ -8,8 +8,12 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.text.Html;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.View;
 import android.view.Window;
@@ -31,7 +35,7 @@ public class NotificationActivity extends FragmentActivity {
 	
 	private OnCheckedChangeListener listener;
 	
-	//private SharedPreferences sp;
+	private boolean is24h; 
 	
 	private final String PREFS_NAME = "OatsPref";
 	
@@ -121,6 +125,7 @@ public class NotificationActivity extends FragmentActivity {
 	public void showTimePicker(View view) {
 		int id = view.getId();
 		fragment.setButton((Button)view);
+		fragment.setIs24H(is24h);
         if(id == R.id.check_in_time) {
         	fragment.setTime(checkIn);
         } else if(id == R.id.check_out_time) {
@@ -217,6 +222,28 @@ public class NotificationActivity extends FragmentActivity {
 	}
 	
 	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.activity_notification_menu, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.settings_menu:
+			startActivity(new Intent(this, NotificationSettingsActivity.class));
+			return true;
+		case R.id.help_menu:
+			DialogFragment dialog = new HelpDialogFragment();
+	        dialog.show(getSupportFragmentManager(), "HelpDialogFragment");
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+	
+	@Override
 	protected void onPause() {
 		super.onPause();
 		checkInBox.setOnCheckedChangeListener(null);
@@ -226,6 +253,8 @@ public class NotificationActivity extends FragmentActivity {
 	@Override
 	protected void onResume() {
         super.onResume();
+        is24h = OatsMobile.is24hFormat();
+        
         SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
         Calendar c1 = Calendar.getInstance();
         Calendar c2 = Calendar.getInstance();
@@ -253,7 +282,7 @@ public class NotificationActivity extends FragmentActivity {
         checkIn = c1;
         checkOut = c2;
         
-        setTimeButtonText(CHECK_IN, checkIn, false);
-        setTimeButtonText(CHECK_OUT, checkOut, false);
+        setTimeButtonText(CHECK_IN, checkIn, is24h);
+        setTimeButtonText(CHECK_OUT, checkOut, is24h);
     }
 }
