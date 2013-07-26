@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -36,14 +35,18 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.provider.Settings;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -58,7 +61,7 @@ import com.project.oats.util.SystemUiHider;
  * 
  * @see SystemUiHider
  */
-public class CheckActivity extends Activity implements LocationListener {
+public class CheckActivity extends FragmentActivity implements LocationListener {
 	
 	private static Toast toast;
 	
@@ -86,7 +89,7 @@ public class CheckActivity extends Activity implements LocationListener {
 	
 	private final int REQUEST_CODE = 1;
 	
-	private final int RESPONSE_CODE = 500;
+	public static final int RESPONSE_CODE = 500;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -145,6 +148,28 @@ public class CheckActivity extends Activity implements LocationListener {
 	
 	public void onSetNotificationClicked(View view) {
 		startActivity(new Intent(this, NotificationActivity.class));
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.activity_check_menu, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.absence_menu:
+			startActivityForResult(new Intent(this, AbsenceActivity.class), REQUEST_CODE);
+			return true;
+		case R.id.help_menu:
+			DialogFragment dialog = new HelpDialogFragment();
+	        dialog.show(getSupportFragmentManager(), "HelpDialogFragment");
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 	
 	private void processLocation(View view, Location l) {

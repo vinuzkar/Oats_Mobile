@@ -54,10 +54,10 @@ public class NotificationActivity extends FragmentActivity {
 		if(getDeviceDefaultOrientation() == Configuration.ORIENTATION_PORTRAIT) {
 			setContentView(R.layout.activity_notification_port);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		} /*else {
+		} else {
 			setContentView(R.layout.activity_notification_land);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-		}*/
+		}
 		
 		checkInBox = (CheckBox)findViewById(R.id.check_in_notification);
 		checkOutBox = (CheckBox)findViewById(R.id.check_out_notification);

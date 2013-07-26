@@ -18,8 +18,11 @@
 	<string name="check_in_notification">Activate check-in notification</string>
 	<string name="check_out_notification">Activate check-out notification</string>
 	<string name="done">Done</string>
-	<string name="help">Help</string>
 	<string name="settings">Settings</string>
+	<string name="absence">Send Absence Message</string>
+	<string name="absence_title">Send Absence Excuse Message</string>
+	<string name="send_excuse">Send</string>
+	<string name="help">Help</string>
 	<string name="sign_in_help">
     	<![CDATA[
     	<html>
@@ -40,8 +43,24 @@
 	    		<b>2. Checking In/Out</b><br />After signing in, you can start checking 
 	    		in/out by clicking the &quot;Check In/Check Out&quot; toggle button. Only 
 	    		registered user who is in the range of the their respective office(s) can 
-	    		check-in/out. To check in/out, you must enable wi-fi/mobile connection.<br />
+	    		check-in/out. There is a case where you have checked-in without using your 
+	    		device and have not check-out. In that case, the toggle button may still be 
+	    		&quot;Check In&quot; button. To be able to check-out, simply click the toggle 
+	    		button to change it to &quot;Check Out&quot; button. The same goes for 
+	    		another case.<br />
 		    </body>
+	    </html>
+    	]]>
+    </string>
+    <string name="absence_help">
+    	<![CDATA[
+    	<html>
+ 			<head></head>
+ 			<body style="text-align:justify;color:white;">
+	    		<b>3. Sending Absence Message</b><br />In the &quot;Check In/Out&quot; 
+	    		page click the option menu button then click &quot;Send Absence Message&quot; 
+	    		to send absence excuse message to your HR department.<br />
+	    	</body>
 	    </html>
     	]]>
     </string>
@@ -50,10 +69,10 @@
     	<html>
  			<head></head>
  			<body style="text-align:justify;color:white;">
-	    		<b>3. Showing Performance</b><br />You can see your daily worktime. Simply 
+	    		<b>4. Showing Daily Worktime</b><br />You can see your daily worktime. Simply 
 	    		go to &quot;Show Performance&quot; page by clicking &quot;Show Performance&quot; 
-	    		button in Check-in/out page. In &quot;Show Performance&quot; page, you can 
-	    		see your worktime daily by selecting &quot;from&quot; date and &quot;to&quot; 
+	    		button in &quot;Check-In/Out&quot; page. In &quot;Performance&quot; page, you 
+	    		can see your worktime daily by selecting &quot;from&quot; date and &quot;to&quot; 
 	    		date and then click &quot;Show&quot; button.<br />
 	    	</body>
 	    </html>
@@ -64,11 +83,11 @@
     	<html>
  			<head></head>
  			<body style="text-align:justify;color:white;">
-	    		<b>4. Setting Notification</b><br />You can also add notification to remind 
-	    		you to check in and/or out. Simply go to &quot;Set Notification&quot; page by 
-	    		clicking &quot;Set Notification&quot; button in Check-in/out page. You can 
-	    		choose which notification to activate and on what time it should notify 
-	    		you.<br />
+	    		<b>5. Activating Notification</b><br />You can also add notification to remind 
+	    		you to check in and/or out. Simply go to &quot;Notification&quot; page by 
+	    		clicking &quot;Set Notification&quot; button in the &quot;Check-In/Out&quot; 
+	    		page. You can choose which notification to activate and on what time it should 
+	    		notify you. To cancel a notification, simply uncheck the respective check box.<br />
 	    	</body>
 	    </html>
     	]]>
@@ -78,9 +97,9 @@
     	<html>
  			<head></head>
  			<body style="text-align:justify;color:white;">
-	    		<b>5. Modifying Notification Settings</b><br />In &quot;Set Notification&quot; 
-	    		page click the option menu button then click &quot;Settings&quot; to modify 
-	    		notification settings. You can choose to change time formatting and/or 
+	    		<b>6. Modifying Notification Settings</b><br />In &quot;Notification&quot; page 
+	    		click the option menu button then click &quot;Settings&quot; to modify 
+	    		notification settings. You can choose to change the time format and/or 
 	    		notification ringtone.<br />
 	    	</body>
 	    </html>

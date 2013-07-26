@@ -47,8 +47,12 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.text.Html;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.View;
 import android.view.Window;
@@ -87,8 +91,6 @@ public class PerformanceActivity extends FragmentActivity {
 	private final String PREFS_NAME = "OatsPref";
 	
 	private final String DATE_FORMAT = "dd-MM-yyyy";
-	
-	private final int RESPONSE_CODE = 500;
 	
 	private final long TEN_DAYS = 777600000;
 	
@@ -230,6 +232,25 @@ public class PerformanceActivity extends FragmentActivity {
 	}
 	
 	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.activity_help_menu, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.help_menu:
+			DialogFragment dialog = new HelpDialogFragment();
+	        dialog.show(getSupportFragmentManager(), "HelpDialogFragment");
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+	
+	@Override
 	protected void onPause() {
         super.onPause();
         
@@ -355,7 +376,7 @@ public class PerformanceActivity extends FragmentActivity {
                 editor.putString("token", "");
                 editor.commit();
             	dialog.cancel();
-            	setResult(RESPONSE_CODE);
+            	setResult(CheckActivity.RESPONSE_CODE);
             	startActivity(new Intent(PerformanceActivity.this, LoginActivity.class));
 				finish();
             }

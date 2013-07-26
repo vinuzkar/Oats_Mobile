@@ -48,10 +48,14 @@
             android:configChanges="keyboardHidden|screenSize"
             android:theme="@style/FullscreenTheme" >
         </activity>
-        <activity android:name="com.project.oats.AddAlarmActivity"></activity>
+        <activity
+            android:name="com.project.oats.AbsenceActivity"
+            android:configChanges="keyboardHidden|screenSize"
+            android:theme="@style/FullscreenTheme" >
+        </activity>
         <activity android:name="com.project.oats.NotificationSettingsActivity" ></activity>
          
-        <receiver android:name="com.project.oats.AlarmSetter">
+        <receiver android:name="com.project.oats.NotificationSetter">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>

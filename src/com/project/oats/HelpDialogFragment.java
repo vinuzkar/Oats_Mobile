@@ -27,6 +27,11 @@ public class HelpDialogFragment extends DialogFragment {
 		text.loadData(getString(R.string.check_help), "text/html; charset=UTF-8", null);
 		text.setBackgroundColor(0x00000000);
 		
+		text = (WebView)view.findViewById(R.id.absence_help);
+		text.setVerticalScrollBarEnabled(false);
+		text.loadData(getString(R.string.absence_help), "text/html; charset=UTF-8", null);
+		text.setBackgroundColor(0x00000000);
+		
 		text = (WebView)view.findViewById(R.id.performance_help);
 		text.setVerticalScrollBarEnabled(false);
 		text.loadData(getString(R.string.performance_help), "text/html; charset=UTF-8", null);
