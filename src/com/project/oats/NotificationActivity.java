@@ -27,11 +27,15 @@ public class NotificationActivity extends FragmentActivity {
 	
 	private CheckBox checkInBox, checkOutBox;
 	
-	private Button checkInTime, checkOutTime;
+	private Button repeatingDay, checkInTime, checkOutTime;
 	
 	private Calendar checkIn, checkOut;
 	
-	private TimePickerFragment fragment;
+	private String selectedDays;
+	
+	private TimePickerFragment timePicker;
+	
+	private DayPickerFragment dayPicker;
 	
 	private OnCheckedChangeListener listener;
 	
@@ -42,6 +46,8 @@ public class NotificationActivity extends FragmentActivity {
 	public static final int CHECK_IN = 1;
 	
 	public static final int CHECK_OUT = 2;
+	
+	public static final int REPEATING_DAY = 3;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -59,13 +65,16 @@ public class NotificationActivity extends FragmentActivity {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		}
 		
+		repeatingDay = (Button)findViewById(R.id.repeating_day);
 		checkInBox = (CheckBox)findViewById(R.id.check_in_notification);
 		checkOutBox = (CheckBox)findViewById(R.id.check_out_notification);
 		checkInTime = (Button)findViewById(R.id.check_in_time);
 		checkOutTime = (Button)findViewById(R.id.check_out_time);
 		
-		fragment = new TimePickerFragment();
-		fragment.setCaller(this);
+		timePicker = new TimePickerFragment();
+		timePicker.setCaller(this);
+		dayPicker = new DayPickerFragment();
+		dayPicker.setCaller(this);
 	    
 	    listener = new OnCheckedChangeListener() {
 
@@ -124,15 +133,20 @@ public class NotificationActivity extends FragmentActivity {
 	
 	public void showTimePicker(View view) {
 		int id = view.getId();
-		fragment.setButton((Button)view);
-		fragment.setIs24H(is24h);
+		timePicker.setButton((Button)view);
+		timePicker.setIs24H(is24h);
         if(id == R.id.check_in_time) {
-        	fragment.setTime(checkIn);
+        	timePicker.setTime(checkIn);
         } else if(id == R.id.check_out_time) {
-        	fragment.setTime(checkOut);
+        	timePicker.setTime(checkOut);
         }
-        fragment.show(getSupportFragmentManager(), "timePicker");
+        timePicker.show(getSupportFragmentManager(), "timePicker");
     }
+	
+	public void showDayPicker(View view) {
+		dayPicker.setIsChecked(selectedDays);
+        dayPicker.show(getSupportFragmentManager(), "timePicker");
+	}
 	
 	private Calendar incrementDateIfBefore(Calendar c) {
 		Calendar temp = c;
@@ -218,7 +232,116 @@ public class NotificationActivity extends FragmentActivity {
 				break;
 			}
         }
-		
+	}
+	
+	public void setRepeatingDay(boolean daysRepeating[]) {
+		String days = "";
+		for(int i = 0; i < 7; i++) {
+			if(daysRepeating[i]) {
+				days += '1';
+			} else {
+				days += '0';
+			}
+		}
+		selectedDays = days;
+		SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString("repeating_day", days);
+        editor.commit();
+	}
+	
+	public void setRepeatingDayButton(String daysRepeating) {
+		String days = "";
+		for(int i = 0; i < 7; i++) {
+			if(daysRepeating.charAt(i) == '1') {
+				if(days.length() > 0) {
+					switch(i) {
+					case 0:
+						days += " Sun"; break;
+					case 1:
+						days += ", Mon"; break;
+					case 2:
+						days += ", Tue"; break;
+					case 3:
+						days += ", Wed"; break;
+					case 4:
+						days += ", Thu"; break;
+					case 5:
+						days += ", Fri"; break;
+					case 6:
+						days += ", Sat"; break;
+					}
+				} else {
+					switch(i) {
+					case 0:
+						days += " Sun"; break;
+					case 1:
+						days += " Mon"; break;
+					case 2:
+						days += " Tue"; break;
+					case 3:
+						days += " Wed"; break;
+					case 4:
+						days += " Thu"; break;
+					case 5:
+						days += " Fri"; break;
+					case 6:
+						days += " Sat"; break;
+					}
+				}
+			}
+		}
+		if(days.length() == 0) {
+			days = " Never";
+		}
+		repeatingDay.setText(Html.fromHtml("<big>Repeat</big><br />" + days));
+	}
+	
+	public void setRepeatingDayButton(boolean daysRepeating[]) {
+		String days = "";
+		for(int i = 0; i < 7; i++) {
+			if(daysRepeating[i]) {
+				if(days.length() > 0) {
+					switch(i) {
+					case 0:
+						days += " Sun"; break;
+					case 1:
+						days += ", Mon"; break;
+					case 2:
+						days += ", Tue"; break;
+					case 3:
+						days += ", Wed"; break;
+					case 4:
+						days += ", Thu"; break;
+					case 5:
+						days += ", Fri"; break;
+					case 6:
+						days += ", Sat"; break;
+					}
+				} else {
+					switch(i) {
+					case 0:
+						days += " Sun"; break;
+					case 1:
+						days += " Mon"; break;
+					case 2:
+						days += " Tue"; break;
+					case 3:
+						days += " Wed"; break;
+					case 4:
+						days += " Thu"; break;
+					case 5:
+						days += " Fri"; break;
+					case 6:
+						days += " Sat"; break;
+					}
+				}
+			}
+		}
+		if(days.length() == 0) {
+			days = " Never";
+		}
+		repeatingDay.setText(Html.fromHtml("<big>Repeat</big><br />" + days));
 	}
 	
 	@Override
@@ -281,7 +404,9 @@ public class NotificationActivity extends FragmentActivity {
 		checkOutBox.setOnCheckedChangeListener(listener);
         checkIn = c1;
         checkOut = c2;
+        selectedDays = pref.getString("repeating_day", "0000000");
         
+        setRepeatingDayButton(selectedDays);
         setTimeButtonText(CHECK_IN, checkIn, is24h);
         setTimeButtonText(CHECK_OUT, checkOut, is24h);
     }

@@ -41,8 +41,9 @@
 	            android:layout_height="30sp"
 	            android:layout_margin="0sp"
 	            android:layout_alignParentTop="true"
-	            android:textColor="#000000"
-	            android:background="@drawable/date_picker"
+	            android:textColor="#ffffff"
+	            android:textStyle="bold"
+	            android:background="@drawable/positive_button"
 	            android:onClick="showDatePicker" />
 	        
 	        <Button
@@ -52,8 +53,9 @@
 	            android:layout_height="30sp"
 	            android:layout_marginTop="5sp"
 	            android:layout_below="@+id/from"
-	            android:textColor="#000000"
-	            android:background="@drawable/date_picker"
+	            android:textColor="#ffffff"
+	            android:textStyle="bold"
+	            android:background="@drawable/positive_button"
 	            android:onClick="showDatePicker" />
 	        
 	        <TextView
@@ -76,7 +78,7 @@
 	            android:layout_marginTop="5dp"
 	            android:layout_marginLeft="15dp"
 	            android:layout_marginRight="15dp"
-	            android:background="@drawable/positive_button"
+	            android:background="@drawable/neutral_button"
 	            android:text="@string/show"
 	            android:textColor="#ffffff"
 	            android:textSize="14sp"
